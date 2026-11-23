@@ -198,5 +198,15 @@ cases:
         - Asks the user about soft versus hard deletion and the fate of the posts, at most three questions, each with a recommended answer and a short reason.
         - States low-risk details it can default, such as a confirmation dialog, as assumptions instead of asking about them.
         - Does not ask about facts the project or conversation already answers.
+
+  - name: names_the_skill_that_carries_the_prompt
+    prompt: |
+      Write me a prompt so Codex adds retry logic to the HTTP client in this repo. The delegate-code and
+      second-opinion skills are installed. Only the prompt for now.
+    rubric:
+      expectations:
+        - Returns the prompt in a fenced text block and does not launch Codex.
+        - Says in one line that delegate-code can send this prompt to Codex in its own worktree and review the diff, instead of telling the user they must paste it.
+        - Does not present second-opinion as the way to have Codex implement the change.
 threshold:
   pass_rate: 0.8

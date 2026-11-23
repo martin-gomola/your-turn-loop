@@ -1,7 +1,7 @@
 ---
 name: what-to-ask
 metadata:
-  version: "0.4.0"
+  version: "0.5.0"
 description: Builds a concise, ready-to-paste prompt from a rough task, bug report, screenshot, or another agent's result. Use when someone asks what to ask an AI, wants help wording a request, or wants to continue work in another agent. Avoid for direct implementation, general questions, or debugging an existing prompt.
 ---
 
@@ -38,4 +38,10 @@ Return the copy-ready prompt in a fenced `text` block. For a prompt-only request
 
 Keep it as short as the task allows; do not force a role, chain-of-thought, examples, or rigid section count unless the task benefits from it. Add only a brief assumption or one unresolved question when necessary. Before returning, check that the prompt preserves the user's intent, stands on its own, and describes a result the next assistant can verify.
 
-When the prompt asks Claude or Gemini for a read-only opinion and the `second-opinion` skill is available, say that `second-opinion` can send it through the local CLI without pasting. Do not run it in a prompt-only turn. Prompts for implementation in another agent still need the user to paste them there.
+When a companion skill can carry the prompt to another agent's local CLI without pasting, say so in one line and name it; do not run it in a prompt-only turn:
+
+- a read-only opinion from Claude, Codex or Gemini: `second-opinion`;
+- implementation by Codex, Claude Code or Antigravity in its own worktree, reviewed before merge: `delegate-code`, which can use this prompt as its brief;
+- an image from an agent without its own image tool: `codex-image`.
+
+Mention only skills that are available. Otherwise, and for agents these skills do not drive, the user pastes the prompt into the other agent.

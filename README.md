@@ -48,7 +48,7 @@ For how this compares with agent frameworks and terminal wrappers, see
 | Brief | You → orchestrator | [what-to-ask](skills/what-to-ask/SKILL.md) | Turn notes, a screenshot, or another agent's result into a self-contained prompt. |
 | Delegate | Orchestrator → reviewer | [second-opinion](skills/second-opinion/SKILL.md) | Get a read-only second opinion through an installed Claude, Codex or Antigravity CLI. |
 | Delegate | Orchestrator → builder | [delegate-code](skills/delegate-code/SKILL.md) | Have Codex, Claude or Antigravity implement a scoped task in its own worktree while your agent reviews the diff. |
-| Delegate | Orchestrator → builder | [codex-image](skills/codex-image/SKILL.md) | Hand off image creation to a Codex CLI with image generation available. |
+| Delegate | Orchestrator → builder | [codex-image](skills/codex-image/SKILL.md) | Let any agent without an image tool create icons, illustrations or previews through a local Codex CLI. |
 | Result | Every agent | [your-turn-handoff](docs/handoff.md) | End every answer with a clear Outcome and Next step, plus Recap and Decision in longer chats. |
 | Your turn | You | [Your Turn inbox](https://github.com/martin-gomola/your-turn) (optional) | See which chats need you, then carry a result back as the next brief. |
 
