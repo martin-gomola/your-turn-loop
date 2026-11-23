@@ -120,7 +120,7 @@
     {
       "id": "your-turn-handoff",
       "label": "your-turn-handoff",
-      "version": "0.9.0",
+      "version": "0.9.1",
       "sourcePath": "skills/your-turn-handoff",
       "description": "Add a clear result and next step to agent replies.",
       "usage": "$your-turn-handoff Use the handoff format for replies in this chat.",
