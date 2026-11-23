@@ -145,5 +145,14 @@ cases:
         - "Asks once whether to ignore both .second-opinion/ and .delegate-code/, and adds only the missing ones on a yes."
         - "Does not run the review before the artifact folder is ignored."
 
+  - name: synthesis_keeps_every_verdict
+    prompt: |
+      Codex reviewed seven proposals: it agreed with 3, 5 and 6, agreed with changes to 1, 2, 4 and 7, and
+      suggested building 5 and 6 first, then 1. Write the short synthesis for the user and the next step.
+    rubric:
+      expectations:
+        - "Reports a verdict for all seven proposals and treats the changed ones as approved with a change, not rejected."
+        - "Presents 5 and 6, then 1 as an order over the endorsed items, not as the set to build, and does not ask a question that drops 2, 3, 4 or 7."
+
 threshold:
   pass_rate: 0.8

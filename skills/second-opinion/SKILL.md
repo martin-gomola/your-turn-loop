@@ -1,7 +1,7 @@
 ---
 name: second-opinion
 metadata:
-  version: "0.5.1"
+  version: "0.5.2"
 description: Asks Claude, Anthropic, Codex, OpenAI, Gemini, Google, or Antigravity through installed local CLIs and saves a repository-local audit artifact. Use for an explicitly requested external-model second opinion, critique, brainstorm, review, or research pass.
 ---
 
@@ -138,6 +138,8 @@ For a review or critique, request a compact Markdown contract: findings with fil
 
 Define the review's acceptance criteria in the prompt. If the advisor contradicts local evidence, distinguish both positions and verify the disputed claim before recommending action. Escalate unresolved high-impact disagreements or an exhausted recovery attempt with the evidence and smallest next check; do not silently accept the advisor's verdict or start another review loop.
 
+The synthesis must not change the advisor's verdicts. Report the verdict for every finding or proposal, not a subset; an "agree with changes" or "modify" verdict is approval with a change, not a rejection. Keep a priority, order or "do first" answer apart from the verdicts: it is sequencing, not scope, so it never narrows what the advisor endorsed or becomes a question that drops the rest. When the prompt asks the advisor to prioritize, ask for it as an order over the endorsed items, not as a choice of which to keep.
+
 The runner prints a JSON result and returns one of these statuses:
 
 - `ok`: completed non-empty response.
@@ -203,6 +205,8 @@ agent so it is not confused with the advisor's words.
 - Treat the external answer as advisory. Verify material claims against local
   files, official documentation, or runtime evidence before acting on them.
 - Return the provider, concise result, artifact path, and any verification gap.
+  The concise result lists every finding's verdict; any suggested order follows
+  separately as order.
 
 Stop after delivering the requested external opinion and artifact unless the
 user also asked to implement its recommendations. Do not start an automatic
