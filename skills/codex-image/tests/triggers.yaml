@@ -4,6 +4,10 @@ should_trigger:
   - "Claude can't create the project illustration here. Delegate it to Codex and save the PNG in an ignored work folder."
   - "Use $codex-image to create the app icon using this screenshot as a visual reference."
   - "Ask the Codex CLI image tool to make a product hero image and verify the final dimensions."
+  - "Create a 512px app icon for this project and save it in assets/."
+  - "Generate an illustration of a fox reading a map for the empty state."
+  - "Make a 1200x630 social preview image for the README."
+  - "I'm in Gemini and need a background image for the landing page; you can't draw, so get it made."
 should_not_trigger:
   - "Write a better prompt for a poster, but don't generate anything."
   - "Use the available native image-generation tool to create this landscape."

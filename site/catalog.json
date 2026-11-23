@@ -82,9 +82,9 @@
     {
       "id": "codex-image",
       "label": "codex-image",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "sourcePath": "skills/codex-image",
-      "description": "Delegate image generation to a local Codex CLI.",
+      "description": "Lets agents without an image tool generate images through a local Codex CLI.",
       "usage": "$codex-image Generate a 1200 × 630 project illustration using Codex.",
       "example": "Use codex-image to generate a project illustration using Codex."
     },

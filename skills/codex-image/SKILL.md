@@ -1,13 +1,13 @@
 ---
 name: codex-image
 metadata:
-  version: "0.1.0"
-description: Create project images from Cursor or Claude by delegating to a local Codex CLI that can generate images. Use when those agents need a bitmap asset and the Codex runtime is available; avoid for prompt-only work or when a native image tool already fits.
+  version: "0.2.0"
+description: Generates bitmap images (app icons, illustrations, social previews, hero images, mockups, backgrounds) when the current agent has no image-generation tool, by delegating to a local Codex CLI that can generate images. Use from Claude Code, Cursor, Gemini, Antigravity or any non-Codex agent asked to create, draw or generate an image, even when the request never mentions Codex; avoid for prompt-only work, crops or resizes, or when a native image tool already fits.
 ---
 
 # Codex Image Handoff
 
-Use this workflow when Cursor or Claude needs a project image and the local Codex CLI is the intended image-generation runner. It does not itself provide an image-generation tool. Codex must produce an actual image file for the handoff to succeed.
+Use this workflow when an agent without its own image-generation tool, such as Claude Code, Cursor, Gemini or Antigravity, is asked to create an image, and a local Codex CLI is available to generate it. The request does not have to name Codex: "make an app icon" or "generate a hero image" is enough when the current agent cannot produce the image itself. This skill does not provide an image-generation tool; Codex must produce an actual image file for the handoff to succeed.
 
 ## Workflow
 
@@ -33,4 +33,4 @@ Use this workflow when Cursor or Claude needs a project image and the local Code
 
 Its historical local handoff is not bundled as runtime evidence. Recheck CLI options and image-generation availability on each machine. A Codex CLI image-input flag is not proof that the child runtime exposes image generation. The workflow requires an existing Codex installation and its already-configured authentication; it installs nothing and does not request or print credentials.
 
-This skill is for handing off an image task from Cursor or Claude to Codex. Use the host's native image-generation capability when it is directly available and the user has not specifically asked for Codex delegation. Use a focused style skill, such as `travel-poster`, when its stored art direction is the user's intent.
+This skill is for handing off an image task from a non-Codex agent to Codex. Before telling the user an image cannot be made here, check for a local `codex` CLI and use this workflow. Use the host's native image-generation capability when it is directly available and the user has not specifically asked for Codex delegation. Use a focused style skill, such as `travel-poster`, when its stored art direction is the user's intent.
