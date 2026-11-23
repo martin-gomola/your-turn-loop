@@ -45,6 +45,7 @@ For how this compares with agent frameworks and terminal wrappers, see
 
 | Step | Who acts | Skill | Use it when |
 | --- | --- | --- | --- |
+| Plan | You → orchestrator | [orchestrate](skills/orchestrate/SKILL.md) | Give one goal and name a worker and reviewer, or let it propose them; it runs the steps below without you pasting between agents and stops for merges and decisions. |
 | Brief | You → orchestrator | [what-to-ask](skills/what-to-ask/SKILL.md) | Turn notes, a screenshot, or another agent's result into a self-contained prompt. |
 | Delegate | Orchestrator → reviewer | [second-opinion](skills/second-opinion/SKILL.md) | Get a read-only second opinion through an installed Claude, Codex or Antigravity CLI. |
 | Delegate | Orchestrator → builder | [delegate-code](skills/delegate-code/SKILL.md) | Have Codex, Claude or Antigravity implement a scoped task in its own worktree while your agent reviews the diff. |

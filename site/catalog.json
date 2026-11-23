@@ -5,8 +5,15 @@
     "description": "Your orchestrator agent is the brain: it picks the skills a task needs and hands work to the other agents you already have signed in, on the plans you already pay for. No API keys to set up.",
     "steps": [
       {
+        "title": "Plan",
+        "text": "You give one goal; the orchestrator splits it into tasks, picks a worker and a reviewer, and runs the steps below for you.",
+        "skills": [
+          "orchestrate"
+        ]
+      },
+      {
         "title": "Brief",
-        "text": "You give rough notes; the orchestrator turns them into a brief another agent can act on.",
+        "text": "The orchestrator turns each task, or your rough notes, into a brief another agent can act on.",
         "skills": [
           "what-to-ask"
         ]
@@ -34,8 +41,12 @@
       }
     ],
     "example": {
-      "prompt": "Add an empty state to the task list: when there are no tasks, show an illustration and an 'Add your first task' button. Use what-to-ask to brief Codex, codex-image to have Codex draw the illustration, review it, then use delegate-code to have Codex build the feature in a worktree and review its diff. Use second-opinion for a Gemini second opinion if the diff is risky. End with the your-turn-handoff block.",
+      "prompt": "Orchestrate this: add an empty state to the task list, with an illustration and an 'Add your first task' button. Worker: codex, reviewer: gemini.",
       "steps": [
+        {
+          "skill": "orchestrate",
+          "text": "Claude plans two tasks, the illustration and the feature, and gives both to Codex with Gemini as reviewer."
+        },
         {
           "skill": "what-to-ask",
           "text": "Claude writes the brief for Codex."
@@ -50,7 +61,7 @@
         },
         {
           "skill": "second-opinion",
-          "text": "Optional: another model gives a read-only second opinion."
+          "text": "Gemini, the reviewer, gives a read-only review of the diff."
         },
         {
           "skill": "your-turn-handoff",
@@ -61,6 +72,15 @@
     }
   },
   "skills": [
+    {
+      "id": "orchestrate",
+      "label": "orchestrate",
+      "version": "0.1.0",
+      "sourcePath": "skills/orchestrate",
+      "description": "Give one goal; it picks a worker and reviewer and runs the loop without pasting.",
+      "usage": "$orchestrate Add CSV export to the filtered table. Worker: codex, reviewer: claude.",
+      "example": "Use orchestrate to add CSV export to the filtered table, with Codex as worker and Claude as reviewer."
+    },
     {
       "id": "what-to-ask",
       "label": "what-to-ask",

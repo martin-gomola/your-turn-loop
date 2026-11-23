@@ -1,10 +1,13 @@
 # Work across agents
 
-Three skills cover one loop: write the brief, delegate it, and bring the result
-back as the next step. Install each one only in the agents where you need it.
+These skills cover one loop: plan the goal, write the brief, delegate it, and
+bring the result back as the next step. Install each one only in the agents where
+you need it. With `orchestrate`, the calling agent runs the plan, brief, delegate
+and result steps itself; you step in for decisions, merges and the next goal.
 
 | Step | Skill | What moves | Who moves it |
 | --- | --- | --- | --- |
+| Plan | [orchestrate](../skills/orchestrate/SKILL.md) | One goal becomes tasks with a worker and a reviewer, run through the skills below. | The agent plans and runs them. |
 | Brief | [what-to-ask](../skills/what-to-ask/SKILL.md) | Rough notes or another agent's result become a self-contained prompt. | The agent drafts it. |
 | Delegate a read-only opinion | [second-opinion](../skills/second-opinion/SKILL.md) | The prompt goes to the local `claude`, `codex` or `agy` CLI. | The agent runs the CLI. |
 | Delegate an image | [codex-image](../skills/codex-image/SKILL.md) | An image brief goes to the local `codex exec`. | The agent runs the CLI. |
@@ -14,17 +17,21 @@ back as the next step. Install each one only in the agents where you need it.
 
 ## Example
 
-1. In Cursor, the orchestrator: "Use delegate-code to have Codex add the CSV export
-   button in Atlas." Cursor writes the brief, runs `codex exec` in a new
-   worktree, and gets back Codex's `Outcome` and `Next step`.
-2. Cursor runs the check and reviews the diff itself, then reports. Merging
-   stays with you.
-3. To continue in another chat, paste the handoff block there and ask
-   what-to-ask for the follow-up prompt. Settled decisions and unverified
-   results carry over without retelling the chat.
-4. For a second opinion before merging, run `$second-opinion claude` to review the change.
-   The calling agent receives the result and an audit file under `.second-opinion/`,
-   with no copy and paste. The runner writes there only when Git ignores it.
+1. In Cursor: "Orchestrate this: add the CSV export button in Atlas, with a
+   short help page. Worker: codex, reviewer: claude." Cursor shows a plan of
+   two tasks and starts, since both roles are named.
+2. For each task Cursor writes the brief with what-to-ask and runs `codex exec`
+   in a new worktree through delegate-code, then runs the check and reviews
+   the diff itself.
+3. Claude reviews each diff read-only through second-opinion. The calling agent
+   receives the result and an audit file under `.second-opinion/`, with no copy
+   and paste. The runner writes there only when Git ignores it.
+4. Cursor stops with a table of both tasks, ready to merge. Merging stays with
+   you; the help page, which depends on the export, starts only after you merge
+   the export.
+5. Without orchestrate, you run the same skills one at a time, and to continue
+   in another chat you paste the handoff block there and ask what-to-ask for the
+   follow-up prompt.
 
 ## What still needs you
 

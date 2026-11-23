@@ -1,0 +1,99 @@
+---
+name: orchestrate
+metadata:
+  version: "0.1.0"
+description: Takes one goal with several parts, splits it into tasks, assigns a worker and reviewer among the local Codex, Claude Code and Antigravity CLIs and routes images, then runs the Your Turn Loop skills to the end without the user pasting between agents. Use when the user has a multi-task goal to coordinate across agents, names roles such as "worker codex, reviewer claude", or asks the agent to orchestrate. Avoid for a single brief, one read-only review, one delegation of one scoped task, an image alone, or work the current agent should do itself.
+---
+
+# Orchestrate
+
+Use this workflow as the entry point of the Your Turn Loop. The calling agent
+keeps the plan, the reviews and the decisions; other local agents do the work.
+It composes the companion skills and does not restate their rules: when a step
+names a skill, follow that skill. It needs the companion skills it uses to be
+installed and the agents' CLIs to be installed and signed in. It installs
+nothing and never reads or prints credentials.
+
+## Roles
+
+| Role | Does | Can be | Through |
+| --- | --- | --- | --- |
+| Worker | Writes code in its own worktree | `codex`, `claude` or `agy` | `delegate-code` |
+| Reviewer | Gives a read-only review of a plan or diff | `claude`, `codex` or `gemini` (`agy`) | `second-opinion` |
+
+Worker and reviewer are delegated roles. Their own skills' rules apply: never
+the agent you are running in; Cursor orchestrates but is never a worker or
+reviewer; the reviewer is neither the worker nor you.
+
+Images are not a delegated role. Make them with your own image tool when you
+have one, Codex included. Without one, hand them to a local Codex through
+`codex-image`.
+
+Resolve the worker and reviewer once per goal, in this order:
+
+1. **The request.** Use roles the user names, such as "worker: codex, reviewer:
+   claude", including a different worker per task.
+2. **Standing preference.** Otherwise use a line the user keeps in the agent's
+   instructions (`AGENTS.md`, `CLAUDE.md` or the agent's global instructions),
+   such as `Your Turn roles: worker codex, reviewer claude`. Say where the roles
+   came from.
+3. **Proposal.** Otherwise propose `codex` as worker for routine code and
+   `claude` for hard design, and as reviewer an installed CLI among `claude`,
+   `codex` and `gemini` that is neither that worker nor you. Ask once and wait
+   for the answer before the first delegation.
+
+If a named role breaks a rule above or its CLI is missing, say which and ask.
+Do not swap in another agent on your own.
+
+## Workflow
+
+1. **Pin the goal.** State the goal, the done criteria and what is out of scope
+   in a few lines. Settle open points as `what-to-ask` does.
+2. **Plan.** Split the goal as `delegate-code` describes under "Several
+   delegations", and keep its `plan.md` for two or more code tasks. Give each
+   task its kind (code, image or review) and, for code, its worker. Show the
+   plan and roles in a short table, then start, unless a role is still waiting
+   on the user.
+3. **Brief each task** with `what-to-ask`, carrying in the progress notes that
+   `delegate-code` keeps for later tasks.
+4. **Run each task** in the order the plan allows:
+   - code: `delegate-code` with the task's worker;
+   - image: your own image tool, or `codex-image`;
+   - review of a plan or design before building: `second-opinion` with the
+     reviewer.
+5. **Review.** For every code task, follow `delegate-code`'s verification,
+   then its independent review through `second-opinion` with the reviewer
+   resolved above. Without a reviewer, run that review only when the change is
+   risky. Report the reviewer's answer as `second-opinion` requires.
+6. **Stop only when the user must act:**
+   - to confirm proposed roles, or to name a role whose CLI is missing;
+   - for a decision that changes the result;
+   - for a worker's `NEEDS_CONTEXT` question that the repository and this
+     chat cannot answer;
+   - to approve a merge. Merge nothing without it, and start a dependent task
+     only after the tasks it depends on are merged;
+   - before a step with an outside effect: push, release, deploy, delete, or a
+     message or post;
+   - after a failed, `BLOCKED` or out-of-quota run, handled as
+     `delegate-code` says.
+
+   Otherwise keep going until every task is ready to merge, merged, failed,
+   blocked or waiting on the user.
+7. **Report** one table for the goal:
+
+   | Task | Agent and role | Status | Check | Left for you |
+   | --- | --- | --- | --- | --- |
+
+   Status is merged, ready to merge, failed, blocked or not started. End with
+   the `your-turn-handoff` block when it is installed, with the action that
+   unblocks the most work as `Next step`.
+
+## Boundaries
+
+- Work moves only through the agents' CLIs, their worktrees and the files the
+  companion skills write. No skill types into another agent's chat or reads its
+  history, and none uses the Your Turn inbox to pass messages.
+- Tasks the user wants you to do yourself stay with you.
+- A companion skill that is not installed cannot be replaced from memory. Name
+  it, skip that kind of task, and say how to install it.
+- Data and quota follow each companion skill's own boundaries.

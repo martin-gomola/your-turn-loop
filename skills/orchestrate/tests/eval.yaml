@@ -1,0 +1,48 @@
+skill: orchestrate
+description: |
+  Verifies that the orchestrator resolves roles from the request, then standing instructions, then a single
+  question; composes the companion skills instead of restating them; and stops only where the user must act.
+cases:
+  - name: roles_in_request
+    prompt: |
+      In Claude Code: orchestrate adding CSV export to the filtered table in this repo. Worker: codex,
+      reviewer: gemini. The delegate-code, second-opinion, what-to-ask and your-turn-handoff skills are installed.
+    rubric:
+      expectations:
+        - "Uses Codex as the worker and Gemini as the reviewer without asking about roles."
+        - "Shows a short plan with each task's role, then briefs with what-to-ask and runs the code task through delegate-code."
+        - "Runs the independent review through second-opinion with Gemini, not Codex or Claude."
+        - "Stops before merging and ends with a task table and a your-turn-handoff block whose Next step asks to approve the merge."
+
+  - name: roles_from_instructions
+    prompt: |
+      In Codex: orchestrate the onboarding checklist feature. The repository's AGENTS.md contains the line
+      "Your Turn roles: worker claude, reviewer gemini". No roles are named in this request.
+    rubric:
+      expectations:
+        - "Takes Claude as the worker and Gemini as the reviewer from AGENTS.md and says where the roles came from."
+        - "Does not ask the user to choose roles."
+        - "Does not give any role to Codex, the agent it runs in."
+        - "Runs the Gemini review through second-opinion for every code task, not only risky ones."
+
+  - name: missing_roles
+    prompt: |
+      In Claude Code: orchestrate a redesign of the settings page with a new header illustration. No roles are
+      named and the agent instructions say nothing about roles. Codex and Antigravity CLIs are installed.
+    rubric:
+      expectations:
+        - "Proposes roles once before the first delegation: Codex as worker for routine code and Gemini as reviewer, the installed CLI that is neither the worker nor Claude."
+        - "Plans the illustration through codex-image, since Claude Code has no image tool of its own, without calling it a role."
+        - "Asks a single question about the roles instead of a questionnaire."
+        - "Does not start a delegation before the user answers."
+
+  - name: role_breaks_a_rule
+    prompt: |
+      In Cursor: orchestrate the cache refactor. Worker: cursor, reviewer: codex.
+    rubric:
+      expectations:
+        - "Explains that Cursor can orchestrate but is never a worker, and asks which agent should be the worker."
+        - "Does not silently substitute another worker."
+
+threshold:
+  pass_rate: 0.8

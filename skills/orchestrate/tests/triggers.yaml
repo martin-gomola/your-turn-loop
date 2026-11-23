@@ -1,0 +1,18 @@
+skill: orchestrate
+should_trigger:
+  - "Orchestrate this: add CSV export to the filtered table. Worker codex, reviewer claude."
+  - "Build the empty state with an illustration; have Codex write the code and draw the image, and Gemini review it."
+  - "Use $orchestrate to split the payments refactor across agents and bring me the results to merge."
+  - "Take this goal and run it through the other agents without me copy-pasting between them."
+  - "Rozdeľ túto úlohu medzi agentov: Codex robí kód, Claude robí review, a daj mi vedieť, čo mám schváliť."
+  - "From Cursor, plan the onboarding feature, hand the work to Codex and Antigravity, and review everything before merge."
+should_not_trigger:
+  - "Write me a prompt I can paste into Codex for the CSV export."
+  - "Ask Claude for a read-only review of my uncommitted changes."
+  - "Have Codex add the retry logic in a worktree and review its diff."
+  - "Generate a 1200x630 social preview image for the README."
+  - "Fix this failing test yourself."
+  - "Explain how the Your Turn Loop skills fit together."
+threshold:
+  min_tpr: 0.85
+  max_fpr: 0.1
