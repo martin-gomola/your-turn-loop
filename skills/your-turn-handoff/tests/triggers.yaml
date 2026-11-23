@@ -1,7 +1,12 @@
 skill: your-turn-handoff
+# Always active: any task that ends in a final answer should trigger it, so the positives are ordinary tasks.
 should_trigger:
   - "Use the Your Turn handoff at the end of my coding-agent answers."
   - "Keep results and required next steps clear across this chat."
+  - "Fix the failing date parser test in this repo."
+  - "Should we use Redis or an in-process cache for the dashboard?"
+  - "Prepare the 1.2.0 release locally; I will push the tag myself."
+  - "Napíš prompt pre Codex na opravu exportu CSV."
 should_not_trigger:
   - "Install an auction addon."
 threshold:
