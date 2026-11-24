@@ -154,5 +154,30 @@ cases:
         - "Reports a verdict for all seven proposals and treats the changed ones as approved with a change, not rejected."
         - "Presents 5 and 6, then 1 as an order over the endorsed items, not as the set to build, and does not ask a question that drops 2, 3, 4 or 7."
 
+  - name: author_reported_checks
+    prompt: |
+      Ask Gemini to review the uncommitted change in this repository. You already ran `make test` and it passed.
+    rubric:
+      expectations:
+        - "Puts `make test` and its passing result in the prompt, labeled as reported by the author and not rerun."
+        - "Asks the advisor to treat the reported check as evidence rather than calling the suite unverifiable."
+
+  - name: severity_needs_failure_scenario
+    prompt: |
+      Ask Codex to review PLAN.md for problems and rate each one.
+    rubric:
+      expectations:
+        - "Defines Critical in the prompt as data loss, a security hole or an unapproved action, backed by a concrete failure scenario."
+        - "Defines Important and Minor so a defect without a failure scenario is not rated Critical."
+
+  - name: synthesis_shows_both_severities
+    prompt: |
+      Gemini rated finding 1 Critical. You checked the files and found a later step already covers the main case,
+      so you would call it Important. Write the synthesis line for finding 1.
+    rubric:
+      expectations:
+        - "Shows Gemini's Critical and your Important side by side with a one-line reason."
+        - "Does not replace Gemini's rating silently or drop the finding."
+
 threshold:
   pass_rate: 0.8
