@@ -51,8 +51,16 @@ class AdvisorError(RuntimeError):
     """Raised when the advisor cannot be run without violating the contract."""
 
 
-def with_completion_authority(prompt: str) -> str:
-    return f"{COMPLETION_AUTHORITY}\n\n{prompt.strip()}"
+# Headless Antigravity auto-denies terminal commands, so asking for file tools up front saves the wasted first attempt.
+GEMINI_READ_ONLY = (
+    "Read files with your native read-only file tools and use the supplied context; do not run "
+    "terminal commands. Where evidence would need a command, state the uncertainty instead."
+)
+
+
+def with_completion_authority(prompt: str, provider: str = "") -> str:
+    prefix = f"{COMPLETION_AUTHORITY} {GEMINI_READ_ONLY}" if provider == "gemini" else COMPLETION_AUTHORITY
+    return f"{prefix}\n\n{prompt.strip()}"
 
 
 def classify_result(returncode: int, stdout: str, stderr: str, timed_out: bool) -> str:
@@ -337,7 +345,7 @@ def main(argv: list[str] | None = None) -> int:
 
         candidate = artifact_path(repo_root, args.provider, task, datetime.now(UTC))
         require_ignored_artifact(repo_root, candidate)
-        final_prompt = with_completion_authority(requested_prompt)
+        final_prompt = with_completion_authority(requested_prompt, args.provider)
         command = build_command(
             args.provider, binary, args.timeout_seconds, final_prompt, args.resume
         )

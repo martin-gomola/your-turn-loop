@@ -115,6 +115,14 @@ def test_completion_prefix_requires_immediate_read_only_result() -> None:
     assert "Begin immediately" in prompt
     assert "do not ask for confirmation" in prompt
     assert prompt.endswith("Review PLAN.md")
+    assert "terminal commands" not in prompt
+
+
+def test_gemini_prompt_asks_for_file_tools_on_the_first_attempt() -> None:
+    prompt = run_advisor.with_completion_authority("Review PLAN.md", "gemini")
+    assert "native read-only file tools" in prompt
+    assert "do not run terminal commands" in prompt
+    assert prompt.endswith("Review PLAN.md")
 
 
 def test_main_retries_protocol_once_and_writes_audit(

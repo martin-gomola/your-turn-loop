@@ -93,7 +93,7 @@
     {
       "id": "second-opinion",
       "label": "second-opinion",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "sourcePath": "skills/second-opinion",
       "description": "Get an external model opinion through local CLIs.",
       "usage": "$second-opinion claude Review my uncommitted changes without editing files.",

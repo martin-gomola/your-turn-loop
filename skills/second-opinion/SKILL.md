@@ -1,7 +1,7 @@
 ---
 name: second-opinion
 metadata:
-  version: "0.5.2"
+  version: "0.6.0"
 description: Asks Claude, Anthropic, Codex, OpenAI, Gemini, Google, or Antigravity through installed local CLIs and saves a repository-local audit artifact. Use for an explicitly requested external-model second opinion, critique, brainstorm, review, or research pass.
 ---
 
@@ -60,7 +60,11 @@ Include:
 3. The minimum local context needed to answer well.
 4. The expected output shape and a concise response budget appropriate to the question; preserve full raw output in the artifact.
 5. A requirement to separate evidence, inference, and uncertainty.
-6. This completion-authority prefix:
+6. The checks you already ran on the target, each with its exact command and result, labeled
+   "reported by the author, not rerun". A read-only advisor cannot run them, so without this it
+   calls a passing test suite unverifiable. Ask it to treat these as reported evidence and to say
+   if the target suggests a check is missing or would not cover the change.
+7. This completion-authority prefix:
 
 ```text
 This read-only review is already authorized. Begin immediately; do not present a plan and do not ask for confirmation. Return the completed review in this response. Do not modify files or external systems.
@@ -134,11 +138,11 @@ has no resume, and Codex runs with `--ephemeral`, so `gemini` and `codex` calls 
 
 ## Interpret the Status
 
-For a review or critique, request a compact Markdown contract: findings with file/source evidence, severity (Critical, Important or Minor), impact and suggested action; uncertainties; and the overall assessment. When the review target comes with a task brief, such as a `delegate-code` diff, also ask whether each done criterion is met, not met, or cannot be verified from the diff, as a separate answer from the findings. For brainstorming or research, adapt those fields to the requested deliverable. Use a default response budget of about 1,000 words unless the task warrants another explicit bound. This is a prompt budget, not an enforced CLI token limit. Keep the raw response intact in the artifact and return a short synthesis to the parent chat.
+For a review or critique, request a compact Markdown contract: findings with file/source evidence, severity (Critical, Important or Minor), impact and suggested action; uncertainties; and the overall assessment. When the review target comes with a task brief, such as a `delegate-code` diff, also ask whether each done criterion is met, not met, or cannot be verified from the diff, as a separate answer from the findings. For brainstorming or research, adapt those fields to the requested deliverable. Define the severities in the prompt: Critical only for data loss, a security hole, or an action taken without the user's approval, and only with a concrete failure scenario (the input or state, and what breaks); a real defect without one is Important; wording, duplication and polish are Minor. Use a default response budget of about 1,000 words unless the task warrants another explicit bound. This is a prompt budget, not an enforced CLI token limit. Keep the raw response intact in the artifact and return a short synthesis to the parent chat.
 
 Define the review's acceptance criteria in the prompt. If the advisor contradicts local evidence, distinguish both positions and verify the disputed claim before recommending action. Escalate unresolved high-impact disagreements or an exhausted recovery attempt with the evidence and smallest next check; do not silently accept the advisor's verdict or start another review loop.
 
-The synthesis must not change the advisor's verdicts. Report the verdict for every finding or proposal, not a subset; an "agree with changes" or "modify" verdict is approval with a change, not a rejection. Keep a priority, order or "do first" answer apart from the verdicts: it is sequencing, not scope, so it never narrows what the advisor endorsed or becomes a question that drops the rest. When the prompt asks the advisor to prioritize, ask for it as an order over the endorsed items, not as a choice of which to keep.
+The synthesis must not change the advisor's verdicts. When you verify a finding and rate its severity differently, report both side by side, the advisor's and yours, with the one-line reason; never replace the advisor's rating silently. Report the verdict for every finding or proposal, not a subset; an "agree with changes" or "modify" verdict is approval with a change, not a rejection. Keep a priority, order or "do first" answer apart from the verdicts: it is sequencing, not scope, so it never narrows what the advisor endorsed or becomes a question that drops the rest. When the prompt asks the advisor to prioritize, ask for it as an order over the endorsed items, not as a choice of which to keep.
 
 The runner prints a JSON result and returns one of these statuses:
 
@@ -152,6 +156,9 @@ The runner prints a JSON result and returns one of these statuses:
 
 On `protocol`, the runner retries exactly once with a corrective non-interactive
 prefix. Do not answer the advisor's confirmation request.
+
+For `gemini`, the runner already asks for native read-only file tools and no terminal commands in
+the first prompt, since headless Antigravity denies commands; a `permission` status is then rarer.
 
 On `permission`, the runner retries exactly once with a command-free correction:
 use native read-only file tools and supplied context, state uncertainty where evidence is
