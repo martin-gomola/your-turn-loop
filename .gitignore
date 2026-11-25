@@ -5,3 +5,4 @@ dist/
 .venv/
 tmp/
 site/pets/
+.DS_Store
