@@ -131,9 +131,10 @@ cases:
 
   - name: review_against_brief
     prompt: |
-      From Claude Code, ask Gemini to review the delegated diff in $TASK/diff.patch against $TASK/brief.md.
+      From Claude Code, ask Gemini to review the delegated diff in .delegate-code/<slug>.review/diff.patch against .delegate-code/<slug>.review/brief.md.
     rubric:
       expectations:
+        - "Points the sandboxed reviewer at the files in the ignored repo-local `.delegate-code/<slug>.review/` folder instead of inlining the diff in the command line."
         - "Asks for each done criterion as met, not met, or cannot verify from the diff, separately from the findings."
         - "Asks for each finding to carry a severity of Critical, Important or Minor."
 

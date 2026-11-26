@@ -1,7 +1,7 @@
 ---
 name: delegate-code
 metadata:
-  version: "0.10.0"
+  version: "0.11.0"
 description: Delegates a scoped implementation task to a local Codex, Claude Code or Antigravity CLI in its own git worktree, then reviews the diff and the returned Outcome and Next step. Use when the user asks to hand coding work to Codex, Claude or Antigravity from another agent. Avoid for read-only opinions, image generation, or work the current agent should do itself.
 ---
 
@@ -64,6 +64,10 @@ images.
    - Run `which -a <worker>`, `<worker> --version` and the command's `--help`
      (`codex exec --help`, `claude --help` or `agy --help`). Use only flags
      the help lists.
+   - If `type -a <worker>` shows a shell function or alias wrapping the CLI,
+     for example one that adds `--yolo` or other flags, call the resolved
+     binary path from `which -a` or `command <worker>` in step 6. A wrapper can
+     bypass restricted mode or break the flag order.
    - Run `git check-ignore -q .delegate-code/x`. If `.delegate-code/` is not
      ignored, ask the user once whether to ignore both working folders of these
      skills in this repository, so `second-opinion` will not ask again. On a
@@ -108,6 +112,8 @@ images.
      check matter more.
 6. **Run the worker** from inside the worktree (`cd .delegate-code/<slug>`). Runs can
    be long, so start them in the background when the host supports that.
+   Invoke the binary path resolved in step 3, or `command <worker>`, so a
+   shell function or alias cannot add flags such as `--yolo`.
 
    **Codex**, restricted, then full access:
 
@@ -131,7 +137,9 @@ images.
    ```
 
    `result.json` holds the final message in `result` and the session id in
-   `session_id`. In restricted mode, add one `--allowedTools` entry for each
+   `session_id`. Also check `is_error` and `subtype`: `is_error: true` or an
+   error subtype such as `error_max_budget_usd` is a failed run even when the
+   exit code is 0. In restricted mode, add one `--allowedTools` entry for each
    command the worker must run.
 
    **Spend cap.** By default runs have no spend cap: on a subscription the
@@ -224,9 +232,19 @@ images.
    **Independent review.** The caller planned the task, so it is not a neutral
    reviewer. When the user asks for an independent review, or the change is
    risky (security, data, a public API), also run `second-opinion` with a provider that
-   is neither the worker nor you. Save the diff with
-   `git -C .delegate-code/<slug> add -A && git -C .delegate-code/<slug> diff --cached > "$TASK/diff.patch"`
-   and give the reviewer three files: `brief.md`, the worker's final message
+   is neither the worker nor you. Put the review bundle in
+   `.delegate-code/<slug>.review/`, next to the worktree and not inside it, so
+   the worktree diff stays clean and a reviewer sandboxed to the repository
+   root reads the files with its own file tools, with no out-of-repo paths and
+   no large diff in its command line:
+
+   ```sh
+   R=.delegate-code/<slug>.review && mkdir -p "$R"
+   cp "$TASK/brief.md" "$R/" && cp <worker final message> "$R/final.md"
+   git -C .delegate-code/<slug> add -A && git -C .delegate-code/<slug> diff --cached > "$R/diff.patch"
+   ```
+
+   Give the reviewer those three files: `brief.md`, the worker's final message
    and `diff.patch`. Ask for two separate answers:
    - **Brief:** met, not met, or cannot verify from the diff, for each done
      criterion;
@@ -271,12 +289,29 @@ images.
    commit, push, or remove the worktree until the user says so. When the user
    approves, run the fingerprint command again first. If the hash differs, the
    worktree changed after review: stop, show what changed, and review again
-   before merging. Otherwise merge the branch or apply the diff, then run the
-   brief's check command again in the main checkout: `HEAD` may have moved
-   since the worktree was created, so the merged result is new code. If it
-   fails, stop, keep the worktree and branch, and report the failure. If it
-   passes, run `git worktree remove .delegate-code/<slug>`, delete the run note and the
-   branch. Keep the task directory until the user is done with it.
+   before applying. Otherwise bring the change into the main checkout. The
+   worker does not commit, so the branch has no commits of its own and
+   `git merge delegate-code/<slug>` would bring in nothing. In the normal case
+   the reviewed changes are staged but uncommitted in the worktree; apply that
+   staged diff:
+
+   ```sh
+   git -C .delegate-code/<slug> diff --cached | git apply
+   ```
+
+   Then run the brief's check command again in the main checkout: `HEAD` may
+   have moved since the worktree was created, so the applied result is new
+   code. If it fails, stop, keep the worktree and branch, and report the
+   failure. If it passes, run `git worktree remove --force .delegate-code/<slug>`
+   (the worktree still holds the staged changes), delete the run note and any
+   `.delegate-code/<slug>.review/` folder, and delete the branch with
+   `git branch -D delegate-code/<slug>`. Keep the task directory until the user
+   is done with it.
+
+   If the user wants a commit or a merge, or a dependent task needs `HEAD` to
+   contain this change, commit the approved result on the target branch (or
+   commit in the worktree and merge that commit) before you create the
+   dependent worktree from `HEAD`.
 
 ## Check on delegations
 
@@ -311,19 +346,25 @@ parallel, or when one run would be too large to review as one diff. Each
 extra task costs a brief, a worktree and a review, so do not split for
 neatness.
 
-When one request becomes more than one delegation, write `$TASK/plan.md`
-before any worktree exists. List each task with its slug, its files (the
-same list its brief carries) and the slugs it depends on.
+When one request becomes more than one delegation, create one shared plan
+directory (`mktemp -d`, use its absolute path as `$PLAN`) and write
+`$PLAN/plan.md` before any worktree exists. List each task with its slug, its
+files (the same list its brief carries) and the slugs it depends on. Give each
+task its own `$TASK` directory, such as `$PLAN/<slug>/` or a separate
+`mktemp -d`, so parallel tasks never overwrite each other's `brief.md`,
+`last.md`, `events.jsonl`, `result.json`, `worker.log` or `diff.patch`.
 
 - If two tasks list the same file, make one depend on the other. Never run
   them at the same time.
-- A task with no dependencies starts from `HEAD`. A dependent task starts
-  only after each task it depends on is reviewed and merged, from the branch
-  that holds those merges, so it sees their code.
+- Every worktree branches from `HEAD`. A task with no dependencies starts
+  from `HEAD` as it is. A dependent task starts only after each task it
+  depends on is reviewed and committed on the target branch, so its worktree,
+  created from `HEAD`, sees their code. An applied but uncommitted change is
+  not in `HEAD`.
 - Run independent tasks in parallel, each through steps 2 to 9 on its own.
 - If a task fails or is blocked, do not start the tasks that depend on it.
   Report them as not started.
-- **Progress notes.** When a task is merged, fails or is blocked, add one
+- **Progress notes.** When a task is committed, fails or is blocked, add one
   line under `## Done` in `plan.md`: the slug, its state, and what a later
   task must know, such as a new function name, a changed interface or a trap
   the worker hit. Before you write a dependent task's brief, read those lines

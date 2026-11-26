@@ -19,7 +19,7 @@ class DistributionTests(unittest.TestCase):
         self.workspace = tempfile.TemporaryDirectory()
         self.addCleanup(self.workspace.cleanup)
         self.root = Path(self.workspace.name) / "repository"
-        shutil.copytree(ROOT, self.root, ignore=shutil.ignore_patterns(".git", "tmp", "dist", "__pycache__", ".venv"))
+        shutil.copytree(ROOT, self.root, ignore=shutil.ignore_patterns(".git", "tmp", "dist", "__pycache__", ".venv", ".DS_Store", ".delegate-code", ".second-opinion"))
 
     def test_skills_are_distributed_directly(self):
         validator.validate(self.root)

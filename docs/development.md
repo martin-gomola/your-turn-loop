@@ -43,6 +43,7 @@ Alternatively install that dependency in a virtual environment, then run:
 ```sh
 python3 scripts/validate.py
 python3 -m unittest discover -s tests -v
+python3 -m pytest skills/second-opinion/tests/test_run_advisor.py -v
 node --test tests/installer.test.mjs
 ```
 

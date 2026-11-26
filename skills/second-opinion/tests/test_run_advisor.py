@@ -321,6 +321,35 @@ def test_timeout_kills_child_processes_and_closes_stdin(tmp_path: Path) -> None:
     pytest.fail("child process survived the timeout")
 
 
+def test_non_claude_command_with_json_argument_is_not_parsed(tmp_path: Path) -> None:
+    script = tmp_path / "fake-cli"
+    script.write_text('#!/bin/sh\necho \'{"result": "parsed", "session_id": "aaaa1111"}\'\n', encoding="utf-8")
+    script.chmod(0o755)
+
+    result = run_advisor.run_once([str(script), "--format", "json"], tmp_path, 10, "codex")
+
+    assert result["status"] == "ok"
+    assert '"result": "parsed"' in result["stdout"]
+    assert result["session_id"] is None
+
+
+def test_claude_json_is_error_with_zero_exit_is_failed(tmp_path: Path) -> None:
+    script = tmp_path / "fake-claude"
+    script.write_text(
+        '#!/bin/sh\necho \'{"is_error": true, "subtype": "error_max_budget_usd", '
+        '"result": "Budget exceeded", "session_id": "bbbb2222"}\'\n',
+        encoding="utf-8",
+    )
+    script.chmod(0o755)
+
+    result = run_advisor.run_once([str(script)], tmp_path, 10, "claude")
+
+    assert result["returncode"] == 0
+    assert result["status"] == "failed"
+    assert result["stdout"] == "Budget exceeded"
+    assert result["session_id"] == "bbbb2222"
+
+
 def test_main_rejects_malformed_resume_id(tmp_path: Path) -> None:
     subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
     (tmp_path / "t.txt").write_text("x", encoding="utf-8")

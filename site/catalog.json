@@ -75,7 +75,7 @@
     {
       "id": "orchestrate",
       "label": "orchestrate",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "sourcePath": "skills/orchestrate",
       "description": "Give one goal; it picks a worker and reviewer and runs the loop without pasting.",
       "usage": "$orchestrate Add CSV export to the filtered table. Worker: codex, reviewer: claude.",
@@ -84,7 +84,7 @@
     {
       "id": "what-to-ask",
       "label": "what-to-ask",
-      "version": "0.5.0",
+      "version": "0.5.1",
       "sourcePath": "skills/what-to-ask",
       "description": "Turn rough notes or another agent's result into a prompt.",
       "usage": "$what-to-ask Write a prompt for adding CSV export to the filtered table.",
@@ -93,7 +93,7 @@
     {
       "id": "second-opinion",
       "label": "second-opinion",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "sourcePath": "skills/second-opinion",
       "description": "Get an external model opinion through local CLIs.",
       "usage": "$second-opinion claude Review my uncommitted changes without editing files.",
@@ -102,7 +102,7 @@
     {
       "id": "codex-image",
       "label": "codex-image",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "sourcePath": "skills/codex-image",
       "description": "Lets agents without an image tool generate images through a local Codex CLI.",
       "usage": "$codex-image Generate a 1200 × 630 project illustration using Codex.",
@@ -111,7 +111,7 @@
     {
       "id": "delegate-code",
       "label": "delegate-code",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "sourcePath": "skills/delegate-code",
       "description": "Hand a coding task to Codex, Claude or Antigravity in a worktree and review the diff.",
       "usage": "$delegate-code Have Codex add CSV export to the filtered table, then review its diff.",

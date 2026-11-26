@@ -44,5 +44,24 @@ cases:
         - "Explains that Cursor can orchestrate but is never a worker, and asks which agent should be the worker."
         - "Does not silently substitute another worker."
 
+  - name: worker_named_reviewer_omitted
+    prompt: |
+      In Claude Code: orchestrate the billing export and its audit log. Worker: codex. The agent instructions
+      say nothing about roles. Codex and Antigravity CLIs are installed.
+    rubric:
+      expectations:
+        - "Uses Codex as worker from the request and proposes Gemini as reviewer, the installed CLI that is neither the worker nor Claude."
+        - "Waits once for the user to confirm the reviewer before the first delegation."
+        - "Does not treat the missing reviewer as running without one."
+
+  - name: local_task_stays_with_orchestrator
+    prompt: |
+      In Claude Code: orchestrate the search filter in src/search.ts with Codex as worker and Gemini as
+      reviewer. Update CHANGELOG.md yourself.
+    rubric:
+      expectations:
+        - "Marks the CHANGELOG.md task with kind local in the plan and does it itself."
+        - "Delegates only the search filter task to Codex through delegate-code."
+
 threshold:
   pass_rate: 0.8

@@ -170,19 +170,19 @@ def _text(value: str | bytes | None) -> str:
     return value
 
 
-def parse_claude_json(stdout: str) -> tuple[str, str | None]:
-    """Return (answer text, session id) from `claude -p --output-format json`; raw stdout if not JSON."""
+def parse_claude_json(stdout: str) -> tuple[str, str | None, bool]:
+    """Return (answer text, session id, is_error) from `claude -p --output-format json`; raw stdout if not JSON."""
     try:
         data = json.loads(stdout)
     except ValueError:
-        return stdout, None
+        return stdout, None, False
     if not isinstance(data, dict):
-        return stdout, None
-    return str(data.get("result") or ""), data.get("session_id")
+        return stdout, None, False
+    return str(data.get("result") or ""), data.get("session_id"), data.get("is_error") is True
 
 
 def run_once(
-    command: list[str], repo_root: Path, timeout_seconds: int
+    command: list[str], repo_root: Path, timeout_seconds: int, provider: str = ""
 ) -> dict[str, object]:
     # Own process group and no stdin: a timeout kills the CLI and every child it
     # started, and the CLI can never block waiting for terminal input.
@@ -209,10 +209,14 @@ def run_once(
         timed_out = True
         returncode = 124
     session_id = None
-    if "json" in command:
-        stdout, session_id = parse_claude_json(stdout)
+    is_error = False
+    if provider == "claude":
+        stdout, session_id, is_error = parse_claude_json(stdout)
+    status = classify_result(returncode, stdout, stderr, timed_out)
+    if is_error and status != "timeout":
+        status = "failed"
     return {
-        "status": classify_result(returncode, stdout, stderr, timed_out),
+        "status": status,
         "returncode": returncode,
         "stdout": stdout,
         "stderr": stderr,
@@ -349,7 +353,7 @@ def main(argv: list[str] | None = None) -> int:
         command = build_command(
             args.provider, binary, args.timeout_seconds, final_prompt, args.resume
         )
-        attempts = [run_once(command, repo_root, args.timeout_seconds)]
+        attempts = [run_once(command, repo_root, args.timeout_seconds, args.provider)]
         # A retry continues the same conversation, so the caller ends up with one session id.
         session = attempts[-1]["session_id"] or args.resume
         if attempts[-1]["status"] == "protocol" and args.protocol_retries == 1:
@@ -360,7 +364,7 @@ def main(argv: list[str] | None = None) -> int:
             command = build_command(
                 args.provider, binary, args.timeout_seconds, retry_prompt, session
             )
-            attempts.append(run_once(command, repo_root, args.timeout_seconds))
+            attempts.append(run_once(command, repo_root, args.timeout_seconds, args.provider))
         elif attempts[-1]["status"] == "permission":
             retry_prompt = (
                 "Permission recovery: return the completed read-only review now without running "
@@ -372,7 +376,7 @@ def main(argv: list[str] | None = None) -> int:
             command = build_command(
                 args.provider, binary, args.timeout_seconds, retry_prompt, session
             )
-            attempts.append(run_once(command, repo_root, args.timeout_seconds))
+            attempts.append(run_once(command, repo_root, args.timeout_seconds, args.provider))
 
         path = write_artifact(
             candidate, task, args.provider, final_prompt, command, attempts

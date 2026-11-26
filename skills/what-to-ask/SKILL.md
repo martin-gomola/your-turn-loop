@@ -1,7 +1,7 @@
 ---
 name: what-to-ask
 metadata:
-  version: "0.5.0"
+  version: "0.5.1"
 description: Builds a concise, ready-to-paste prompt from a rough task, bug report, screenshot, or another agent's result. Use when someone asks what to ask an AI, wants help wording a request, or wants to continue work in another agent. Avoid for direct implementation, general questions, or debugging an existing prompt.
 ---
 
@@ -42,6 +42,7 @@ When a companion skill can carry the prompt to another agent's local CLI without
 
 - a read-only opinion from Claude, Codex or Gemini: `second-opinion`;
 - implementation by Codex, Claude Code or Antigravity in its own worktree, reviewed before merge: `delegate-code`, which can use this prompt as its brief;
-- an image from an agent without its own image tool: `codex-image`.
+- an image from an agent without its own image tool: `codex-image`;
+- a multi-task goal coordinated across worker and reviewer CLIs: `orchestrate`.
 
 Mention only skills that are available. Otherwise, and for agents these skills do not drive, the user pastes the prompt into the other agent.

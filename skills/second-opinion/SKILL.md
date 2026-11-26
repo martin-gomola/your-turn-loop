@@ -1,7 +1,7 @@
 ---
 name: second-opinion
 metadata:
-  version: "0.6.0"
+  version: "0.7.0"
 description: Asks Claude, Anthropic, Codex, OpenAI, Gemini, Google, or Antigravity through installed local CLIs and saves a repository-local audit artifact. Use for an explicitly requested external-model second opinion, critique, brainstorm, review, or research pass.
 ---
 
@@ -74,6 +74,12 @@ When the user supplies a ready prompt, such as one drafted with `what-to-ask`,
 keep its task, scope, and constraints as written and add only the missing items
 above.
 
+When the review covers files prepared by another skill, such as a
+`delegate-code` brief, worker output and diff, place them in a Git-ignored
+repo-local folder such as `.delegate-code/<slug>.review/`. Sandboxed providers
+then read them with native file tools instead of out-of-repo temporary paths,
+and large diffs stay out of command-line arguments.
+
 Do not assume `main`, the current branch, or the entire repository when the
 review target is not established. Resolve the target from the user's request
 or current task context; ask one short question only when different targets
@@ -133,8 +139,9 @@ the files it read, and stays in plan mode. Each call still writes its own
 artifact. Keep the latest `session_id` and reuse it for the next follow-up.
 
 Use `--resume` only for a follow-up the user asked for, and only with a
-`session_id` that an earlier `second-opinion` result returned in this repository. Antigravity
-has no resume, and Codex runs with `--ephemeral`, so `gemini` and `codex` calls always start fresh.
+`session_id` that an earlier `second-opinion` result returned in this repository. Here
+Antigravity runs with `--output-format text`, so the runner captures no conversation id to resume,
+and Codex runs with `--ephemeral`, so `gemini` and `codex` calls always start fresh.
 
 ## Interpret the Status
 

@@ -88,6 +88,15 @@ cases:
         - "Reruns `git add -A` and `git write-tree` in the worktree and compares the hash with the one recorded after review."
         - "Stops and reviews again if the hash differs, instead of merging."
 
+  - name: apply_uncommitted_worktree
+    prompt: |
+      Codex left its changes staged but uncommitted in the delegate-code worktree. The fingerprint matches and I approve. Bring it in.
+    rubric:
+      expectations:
+        - "Does not rely on `git merge delegate-code/<slug>`, since the branch holds no commits; applies the staged diff with `git -C .delegate-code/<slug> diff --cached | git apply`."
+        - "Runs the brief's check command in the main checkout, and only after it passes runs `git worktree remove --force`, deletes the run note and any `.delegate-code/<slug>.review/` folder, and runs `git branch -D delegate-code/<slug>`."
+        - "Commits the result on the target branch first when the user wants a commit or a dependent task must start from a `HEAD` that holds it."
+
   - name: independent_review
     prompt: |
       From Claude Code, have Codex rewrite the session token check in src/auth.py, and get an independent review before I merge.
@@ -152,8 +161,9 @@ cases:
       src/cli.py, and docs for both in docs/users.md. Run what you can in parallel.
     rubric:
       expectations:
-        - "Writes plan.md first, listing each task's slug, the files it may change and its dependencies."
-        - "Runs the endpoint and CLI tasks in parallel in separate worktrees, and starts the docs task only after both are reviewed and merged, from the branch that holds them."
+        - "Writes `$PLAN/plan.md` first in a shared plan directory, listing each task's slug, the files it may change and its dependencies."
+        - "Gives each task its own `$TASK` directory, such as `$PLAN/<slug>/`, so parallel runs do not overwrite each other's brief, output or log files."
+        - "Runs the endpoint and CLI tasks in parallel in separate worktrees, and starts the docs task only after both are reviewed and committed on the target branch, so its worktree from `HEAD` holds them."
         - "Gives each brief its file list and, in review, reports any changed file outside that list."
 
   - name: spend_cap
@@ -188,7 +198,7 @@ cases:
     rubric:
       expectations:
         - "Records a line for `api` under `## Done` in plan.md with the rename."
-        - "Puts the `list_users` rename into the `docs` brief before starting it, from the branch that holds the `api` merge."
+        - "Puts the `list_users` rename into the `docs` brief before starting it, from a `HEAD` that holds the committed `api` change."
 
 threshold:
   pass_rate: 0.75

@@ -1,7 +1,7 @@
 ---
 name: orchestrate
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 description: Takes one goal with several parts, splits it into tasks, assigns a worker and reviewer among the local Codex, Claude Code and Antigravity CLIs and routes images, then runs the Your Turn Loop skills to the end without the user pasting between agents. Use when the user has a multi-task goal to coordinate across agents, names roles such as "worker codex, reviewer claude", or asks the agent to orchestrate. Avoid for a single brief, one read-only review, one delegation of one scoped task, an image alone, or work the current agent should do itself.
 ---
 
@@ -29,7 +29,8 @@ Images are not a delegated role. Make them with your own image tool when you
 have one, Codex included. Without one, hand them to a local Codex through
 `codex-image`.
 
-Resolve the worker and reviewer once per goal, in this order:
+Resolve the worker and the reviewer once per goal, each on its own through
+rules 1, 2 and 3 in this order:
 
 1. **The request.** Use roles the user names, such as "worker: codex, reviewer:
    claude", including a different worker per task.
@@ -42,6 +43,10 @@ Resolve the worker and reviewer once per goal, in this order:
    `codex` and `gemini` that is neither that worker nor you. Ask once and wait
    for the answer before the first delegation.
 
+If the user names only one role, such as the worker, and the other is not in
+standing instructions, propose the missing role under rule 3 and wait once
+before the first delegation.
+
 If a named role breaks a rule above or its CLI is missing, say which and ask.
 Do not swap in another agent on your own.
 
@@ -51,7 +56,8 @@ Do not swap in another agent on your own.
    in a few lines. Settle open points as `what-to-ask` does.
 2. **Plan.** Split the goal as `delegate-code` describes under "Several
    delegations", and keep its `plan.md` for two or more code tasks. Give each
-   task its kind (code, image or review) and, for code, its worker. Show the
+   task its kind (code, image, review, or local for a task you do yourself)
+   and, for code, its worker. Show the
    plan and roles in a short table, then start, unless a role is still waiting
    on the user.
 3. **Brief each task** with `what-to-ask`, carrying in the progress notes that
@@ -60,11 +66,13 @@ Do not swap in another agent on your own.
    - code: `delegate-code` with the task's worker;
    - image: your own image tool, or `codex-image`;
    - review of a plan or design before building: `second-opinion` with the
-     reviewer.
+     reviewer;
+   - local: do it yourself.
 5. **Review.** For every code task, follow `delegate-code`'s verification,
    then its independent review through `second-opinion` with the reviewer
-   resolved above. Without a reviewer, run that review only when the change is
-   risky. Report the reviewer's answer as `second-opinion` requires.
+   resolved above. Without a reviewer, which applies only when no eligible
+   third CLI is installed or the user declines one, run that review only when
+   the change is risky. Report the reviewer's answer as `second-opinion` requires.
 6. **Stop only when the user must act:**
    - to confirm proposed roles, or to name a role whose CLI is missing;
    - for a decision that changes the result;
