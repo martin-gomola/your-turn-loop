@@ -830,7 +830,24 @@ button.term-pill:hover:enabled { background: rgba(74, 222, 128, .18); }
   font: 13px/1.7 var(--mono);
   white-space: pre-wrap;
 }
-.spec-example pre { margin-top: 14px; }
+.chat-reply {
+  margin: 12px 0 0;
+  padding: 16px 18px;
+  overflow-wrap: break-word;
+  border: 1px solid var(--line);
+  background: var(--page);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.55;
+}
+.spec-example .chat-reply { margin-top: 14px; }
+.chat-reply p {
+  max-width: none;
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+}
+.chat-reply p + p { margin-top: 12px; }
 .spec-toc {
   margin-top: 16px;
   padding-top: 14px;
@@ -845,7 +862,7 @@ button.term-pill:hover:enabled { background: rgba(74, 222, 128, .18); }
 .spec-fields h3 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin: 0; font-size: 15px; }
 .spec-fields p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
 .spec .detail-label { margin: 20px 0 0; }
-.spec .detail-label + pre { margin-top: 8px; }
+.spec .detail-label + .chat-reply { margin-top: 8px; }
 .spec-table { width: 100%; border-collapse: collapse; font-size: 15px; }
 .spec-table th, .spec-table td { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
 .spec-table th { color: var(--muted); font: 700 12px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; }

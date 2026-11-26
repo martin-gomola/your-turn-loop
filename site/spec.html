@@ -7,7 +7,7 @@
 <title>Handoff protocol · Your Turn Loop</title>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch{document.documentElement.dataset.theme='light'}</script>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 <script type="module" src="theme.mjs?v=1"></script>
 <script type="module" src="spec.mjs?v=1"></script>
 <body>
@@ -41,13 +41,12 @@
         <span class="result-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6M9 18h3"/></svg></span>
         <h2 id="example-title">The block</h2>
       </div>
-      <pre tabindex="0" aria-label="Example handoff block">**Outcome:** The importer skips malformed rows instead of aborting the file.
-
-**Next step:** review: confirm the skipped-row log format in importer.py
-
-**Recap:** Goal: tolerate bad rows. Settled: skip and log to keep valid rows. Open: your log-format review.
-
-**Decision:** Skip or abort on a malformed row? -> skip and log (over abort, silent skip). One bad row should not lose a whole import.</pre>
+      <div class="chat-reply" role="region" aria-label="Example handoff block">
+        <p><strong>Outcome:</strong> The importer skips malformed rows instead of aborting the file.</p>
+        <p><strong>Next step:</strong> review: confirm the skipped-row log format in importer.py</p>
+        <p><strong>Recap:</strong> Goal: tolerate bad rows. Settled: skip and log to keep valid rows. Open: your log-format review.</p>
+        <p><strong>Decision:</strong> Skip or abort on a malformed row? -&gt; skip and log (over abort, silent skip). One bad row should not lose a whole import.</p>
+      </div>
     </section>
   </div>
   <section class="hud-panel spec-section spec-adopt" id="use" aria-labelledby="use-title">
@@ -139,23 +138,23 @@ Format: Handoff protocol 1.0, https://martin-gomola.github.io/your-turn-loop/spe
   <section class="hud-panel spec-section" id="examples" aria-labelledby="examples-title">
     <h2 class="field-label" id="examples-title"><span class="field-step" aria-hidden="true">05</span><span>Examples</span></h2>
     <h3 class="detail-label">Done, nothing waits</h3>
-    <pre>Fixed the off-by-one in the pager.
-
-**Outcome:** The last page now shows its final row.
-
-**Next step:** none</pre>
+    <div class="chat-reply">
+      <p>Fixed the off-by-one in the pager.</p>
+      <p><strong>Outcome:</strong> The last page now shows its final row.</p>
+      <p><strong>Next step:</strong> none</p>
+    </div>
     <h3 class="detail-label">The user reserved a command</h3>
-    <pre>**Outcome:** Initial release 0.1.0 is committed and tagged locally; checks passed.
-
-**Next step:** run: git push --force-with-lease origin main &amp;&amp; git push origin v0.1.0
-
-**Recap:** Release prepared. Original history is backed up locally; publishing remains yours.</pre>
+    <div class="chat-reply">
+      <p><strong>Outcome:</strong> Initial release 0.1.0 is committed and tagged locally; checks passed.</p>
+      <p><strong>Next step:</strong> run: git push --force-with-lease origin main &amp;&amp; git push origin v0.1.0</p>
+      <p><strong>Recap:</strong> Release prepared. Original history is backed up locally; publishing remains yours.</p>
+    </div>
     <h3 class="detail-label">A choice is still open</h3>
-    <pre>**Outcome:** Both caches cut dashboard latency below 200 ms; they differ in how stale data can get.
-
-**Next step:** decide: Redis with a 60 s TTL, or an in-process LRU per worker?
-
-**Recap:** Goal: faster dashboard. Settled: queries are the bottleneck. Open: which cache.</pre>
+    <div class="chat-reply">
+      <p><strong>Outcome:</strong> Both caches cut dashboard latency below 200 ms; they differ in how stale data can get.</p>
+      <p><strong>Next step:</strong> decide: Redis with a 60 s TTL, or an in-process LRU per worker?</p>
+      <p><strong>Recap:</strong> Goal: faster dashboard. Settled: queries are the bottleneck. Open: which cache.</p>
+    </div>
   </section>
 
   <section class="hud-panel spec-section" id="implementations" aria-labelledby="impl-title">
