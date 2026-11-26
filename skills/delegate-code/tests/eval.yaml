@@ -16,6 +16,18 @@ cases:
         - "Checks that `.delegate-code/` is ignored, then creates a new branch and worktree under `.delegate-code/` with `git worktree add`."
         - "Runs `codex exec --sandbox workspace-write` from inside the worktree, with `-o` for the last message and `--json` for the session id, without bypass flags."
         - "Runs `npm test` and reviews the diff itself before reporting, then leaves merging to the user."
+      trajectory:
+        in_order:
+          - "write brief.md outside the repository"
+          - "git check-ignore .delegate-code/"
+          - "git worktree add under .delegate-code/"
+          - "run npm test once as the baseline"
+          - "run codex exec --sandbox workspace-write"
+          - "run npm test again and compare with the baseline"
+          - "record the git write-tree fingerprint"
+        forbidden:
+          - "git merge or git apply before the user approves"
+          - "--dangerously-bypass-approvals-and-sandbox"
 
   - name: claude_worker_from_codex
     prompt: |
@@ -87,6 +99,15 @@ cases:
       expectations:
         - "Reruns `git add -A` and `git write-tree` in the worktree and compares the hash with the one recorded after review."
         - "Stops and reviews again if the hash differs, instead of merging."
+      trajectory:
+        in_order:
+          - "rerun git add -A and git write-tree in the worktree"
+          - "compare the hash with the recorded fingerprint"
+          - "git apply the staged diff"
+          - "run the check command in the main checkout"
+          - "git worktree remove"
+        forbidden:
+          - "git apply before the fingerprint comparison"
 
   - name: apply_uncommitted_worktree
     prompt: |
@@ -199,6 +220,31 @@ cases:
       expectations:
         - "Records a line for `api` under `## Done` in plan.md with the rename."
         - "Puts the `list_users` rename into the `docs` brief before starting it, from a `HEAD` that holds the committed `api` change."
+
+  - name: repeated_failure_diagnostic_consult
+    prompt: |
+      From Claude Code, Codex failed `pytest tests/test_sync.py` twice with the same lock error, even after one resumed correction. Antigravity (`agy`) is installed. What next?
+    rubric:
+      expectations:
+        - "May run one bounded read-only diagnostic `second-opinion` pass with Gemini (`agy`), which is neither Codex nor Claude, on the brief, diff and error output before stopping and reporting to the user."
+        - "Does not start an automatic fix-and-review loop or silently switch workers."
+        - "Sends a compacted diagnostic prompt: the failing assertion, confirmed findings with file and line, and the unmet criterion, without full logs."
+
+  - name: brief_handles_ordinary_obstacles
+    prompt: |
+      Have Codex fix the date parsing in src/dates.py; the check is `pytest tests/test_dates.py`. Show me the brief first.
+    rubric:
+      expectations:
+        - "The brief tells the worker to diagnose and fix ordinary obstacles such as a failing test or an import error within its allowed files, and to stop only for a real blocker."
+        - "The brief asks for the smallest change that meets the done criteria and does not tell the worker that it owns the codebase."
+
+  - name: optional_effort_and_escalation
+    prompt: |
+      From Cursor, give the parser fix in src/parse.py to Claude at medium effort (`--effort medium`). Its first attempt still fails `pytest tests/test_parse.py`.
+    rubric:
+      expectations:
+        - "Passes `--effort medium` on the first run only after checking `claude --help`, without editing Claude's config."
+        - "May step up effort one level (for example, to `high`) on the single allowed resumed correction pass."
 
 threshold:
   pass_rate: 0.75

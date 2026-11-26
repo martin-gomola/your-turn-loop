@@ -350,9 +350,95 @@ def test_claude_json_is_error_with_zero_exit_is_failed(tmp_path: Path) -> None:
     assert result["session_id"] == "bbbb2222"
 
 
+def test_claude_safeguard_refusal_is_its_own_status(tmp_path: Path) -> None:
+    script = tmp_path / "fake-claude"
+    script.write_text(
+        '#!/bin/sh\necho \'{"stop_reason": "refusal", "result": "", "session_id": "cccc3333"}\'\n',
+        encoding="utf-8",
+    )
+    script.chmod(0o755)
+
+    result = run_advisor.run_once([str(script)], tmp_path, 10, "claude")
+
+    assert result["status"] == "refusal"
+    assert run_advisor.STATUS_EXIT_CODES["refusal"] == 78
+
+
 def test_main_rejects_malformed_resume_id(tmp_path: Path) -> None:
     subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
     (tmp_path / "t.txt").write_text("x", encoding="utf-8")
     args = ["--provider", "claude", "--repo-root", str(tmp_path), "--task-file", str(tmp_path / "t.txt"),
             "--prompt-file", str(tmp_path / "t.txt"), "--resume", "x; rm -rf"]
+    assert run_advisor.main(args) == 1
+
+
+def test_builds_provider_commands_with_optional_model_and_effort() -> None:
+    claude = run_advisor.build_command(
+        "claude", "/bin/claude", 600, "Review this", model="sonnet", effort="high"
+    )
+    assert claude == [
+        "/bin/claude",
+        "-p",
+        "--permission-mode",
+        "plan",
+        "--output-format",
+        "json",
+        "--model",
+        "sonnet",
+        "--effort",
+        "high",
+        "Review this",
+    ]
+
+    gemini = run_advisor.build_command(
+        "gemini", "/bin/agy", 600, "Review this", model="gemini-2.5-pro", effort="medium"
+    )
+    assert gemini == [
+        "/bin/agy",
+        "--mode",
+        "plan",
+        "--sandbox",
+        "--print-timeout",
+        "600s",
+        "--output-format",
+        "text",
+        "--model",
+        "gemini-2.5-pro",
+        "--effort",
+        "medium",
+        "-p=Review this",
+    ]
+
+    codex = run_advisor.build_command(
+        "codex", "/bin/codex", 600, "Review this", model="o3", effort="high"
+    )
+    assert codex == [
+        "/bin/codex",
+        "exec",
+        "--sandbox",
+        "read-only",
+        "--ephemeral",
+        "--model",
+        "o3",
+        "-c",
+        'model_reasoning_effort="high"',
+        "Review this",
+    ]
+
+
+def test_main_rejects_malformed_model_name(tmp_path: Path) -> None:
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    (tmp_path / "t.txt").write_text("x", encoding="utf-8")
+    args = [
+        "--provider",
+        "claude",
+        "--repo-root",
+        str(tmp_path),
+        "--task-file",
+        str(tmp_path / "t.txt"),
+        "--prompt-file",
+        str(tmp_path / "t.txt"),
+        "--model",
+        "sonnet; whoami",
+    ]
     assert run_advisor.main(args) == 1

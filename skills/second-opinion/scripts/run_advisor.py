@@ -37,11 +37,14 @@ PERMISSION_DENIAL_MARKERS = (
 )
 BINARIES = {"claude": "claude", "gemini": "agy", "codex": "codex"}
 SESSION_ID = re.compile(r"[0-9a-fA-F-]{8,64}")
+MODEL_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$")
+EFFORT_LEVELS = ("low", "medium", "high", "xhigh", "max")
 STATUS_EXIT_CODES = {
     "ok": 0,
     "empty": 65,
     "protocol": 66,
     "permission": 77,
+    "refusal": 78,
     "failed": 1,
     "timeout": 124,
 }
@@ -88,6 +91,8 @@ def build_command(
     timeout_seconds: int,
     prompt: str,
     resume: str | None = None,
+    model: str | None = None,
+    effort: str | None = None,
 ) -> list[str]:
     if provider == "claude":
         # The session is saved so a later call can continue it with --resume <session_id>.
@@ -98,6 +103,8 @@ def build_command(
             "plan",
             "--output-format",
             "json",
+            *(["--model", model] if model else []),
+            *(["--effort", effort] if effort else []),
             *(["--resume", resume] if resume else []),
             prompt,
         ]
@@ -113,11 +120,22 @@ def build_command(
             f"{timeout_seconds}s",
             "--output-format",
             "text",
+            *(["--model", model] if model else []),
+            *(["--effort", effort] if effort else []),
             f"-p={prompt}",
         ]
     if provider == "codex":
         # Plain-text mode prints only the final message on stdout; progress goes to stderr.
-        return [binary, "exec", "--sandbox", "read-only", "--ephemeral", prompt]
+        return [
+            binary,
+            "exec",
+            "--sandbox",
+            "read-only",
+            "--ephemeral",
+            *(["--model", model] if model else []),
+            *(["-c", f'model_reasoning_effort="{effort}"'] if effort else []),
+            prompt,
+        ]
     raise AdvisorError(f"unsupported provider: {provider}")
 
 
@@ -170,15 +188,16 @@ def _text(value: str | bytes | None) -> str:
     return value
 
 
-def parse_claude_json(stdout: str) -> tuple[str, str | None, bool]:
-    """Return (answer text, session id, is_error) from `claude -p --output-format json`; raw stdout if not JSON."""
+def parse_claude_json(stdout: str) -> tuple[str, str | None, bool, bool]:
+    """Return (answer text, session id, is_error, refused) from `claude -p --output-format json`; raw stdout if not JSON."""
     try:
         data = json.loads(stdout)
     except ValueError:
-        return stdout, None, False
+        return stdout, None, False, False
     if not isinstance(data, dict):
-        return stdout, None, False
-    return str(data.get("result") or ""), data.get("session_id"), data.get("is_error") is True
+        return stdout, None, False, False
+    refused = data.get("stop_reason") == "refusal" or data.get("subtype") == "refusal"
+    return str(data.get("result") or ""), data.get("session_id"), data.get("is_error") is True, refused
 
 
 def run_once(
@@ -209,11 +228,13 @@ def run_once(
         timed_out = True
         returncode = 124
     session_id = None
-    is_error = False
+    is_error = refused = False
     if provider == "claude":
-        stdout, session_id, is_error = parse_claude_json(stdout)
+        stdout, session_id, is_error, refused = parse_claude_json(stdout)
     status = classify_result(returncode, stdout, stderr, timed_out)
-    if is_error and status != "timeout":
+    if refused and status != "timeout":
+        status = "refusal"
+    elif is_error and status != "timeout":
         status = "failed"
     return {
         "status": status,
@@ -263,6 +284,10 @@ def write_artifact(
             "user authorization. Do not add a broad allow rule or use a dangerous bypass."
         ),
         "failed": "Inspect stderr and resolve the reported CLI failure before rerunning.",
+        "refusal": (
+            "The provider's safety classifier declined the request. Check the prompt for "
+            "requests to write out internal reasoning; do not retry the same prompt unchanged."
+        ),
     }[str(final["status"])]
     sections = [
         "# External Advisor Audit",
@@ -327,6 +352,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--timeout-seconds", type=int, default=600)
     parser.add_argument("--protocol-retries", type=int, choices=(0, 1), default=1)
     parser.add_argument("--resume", help="continue an earlier claude session by its session_id")
+    parser.add_argument("--model", help="optional provider model name or alias")
+    parser.add_argument("--effort", choices=EFFORT_LEVELS, help="optional provider reasoning effort level")
     return parser.parse_args(argv)
 
 
@@ -342,6 +369,8 @@ def main(argv: list[str] | None = None) -> int:
             raise AdvisorError("task and prompt files must not be empty")
         if args.resume and not SESSION_ID.fullmatch(args.resume):
             raise AdvisorError("--resume must be a session_id from an earlier second-opinion result")
+        if args.model and not MODEL_NAME.fullmatch(args.model):
+            raise AdvisorError("--model must be a simple model name or alias")
         binary_name = BINARIES[args.provider]
         binary = shutil.which(binary_name)
         if binary is None:
@@ -351,7 +380,13 @@ def main(argv: list[str] | None = None) -> int:
         require_ignored_artifact(repo_root, candidate)
         final_prompt = with_completion_authority(requested_prompt, args.provider)
         command = build_command(
-            args.provider, binary, args.timeout_seconds, final_prompt, args.resume
+            args.provider,
+            binary,
+            args.timeout_seconds,
+            final_prompt,
+            args.resume,
+            args.model,
+            args.effort,
         )
         attempts = [run_once(command, repo_root, args.timeout_seconds, args.provider)]
         # A retry continues the same conversation, so the caller ends up with one session id.
@@ -362,7 +397,13 @@ def main(argv: list[str] | None = None) -> int:
                 "Do not ask questions or request confirmation.\n\n" + final_prompt
             )
             command = build_command(
-                args.provider, binary, args.timeout_seconds, retry_prompt, session
+                args.provider,
+                binary,
+                args.timeout_seconds,
+                retry_prompt,
+                session,
+                args.model,
+                args.effort,
             )
             attempts.append(run_once(command, repo_root, args.timeout_seconds, args.provider))
         elif attempts[-1]["status"] == "permission":
@@ -374,7 +415,13 @@ def main(argv: list[str] | None = None) -> int:
                 "a dangerous permission bypass.\n\n" + final_prompt
             )
             command = build_command(
-                args.provider, binary, args.timeout_seconds, retry_prompt, session
+                args.provider,
+                binary,
+                args.timeout_seconds,
+                retry_prompt,
+                session,
+                args.model,
+                args.effort,
             )
             attempts.append(run_once(command, repo_root, args.timeout_seconds, args.provider))
 

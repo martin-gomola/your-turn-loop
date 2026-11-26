@@ -52,6 +52,9 @@ source checksums, grounded instructions, and common private paths/token patterns
 Installer tests check skill and agent selections, scope, command safety and usage
 examples. Trigger and behavior fixtures in each skill's `tests/` directory are
 evaluation rubrics; passing repository validation does not establish model quality.
+An eval case can add `rubric.trajectory` with `in_order` steps the agent must take
+in sequence and `forbidden` steps it must not take, so a grader can catch a correct
+result reached the wrong way. Validation checks only the shape of these lists.
 
 Client installation and activation are separate from command-generation checks.
 Use a disposable project and isolated client configuration for installation tests,

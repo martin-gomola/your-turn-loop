@@ -1,7 +1,7 @@
 ---
 name: your-turn-handoff
 metadata:
-  version: "0.9.6"
+  version: "0.9.7"
 description: End every final user-facing answer with the Your Turn handoff (Outcome and Next step, plus Recap on multi-turn chats and Decision for settled trade-offs), and check your last code edit. Always active for every task and every turn; supports coding agents with or without the Your Turn inbox.
 ---
 
@@ -25,7 +25,7 @@ Prefer the bottom. Keep labels, action prefixes, `none`, `->` and the literal `(
 
 The inbox shows `Outcome` and `Next step` as one-line cards and cuts them at 200 characters.
 
-- **Outcome:** name the concrete result, recommendation or finding in familiar project terms. Mark a hypothesis as tentative. Include a limit here when it changes the meaning of the result; put supporting evidence and smaller limits in the body. For example: "The deck highlights chats needing you; phone layout is unverified."
+- **Outcome:** name the concrete result, recommendation or finding in familiar project terms. Write for a reader switching in from another chat: avoid undefined references or newly invented shorthand that only makes sense later in the message. Mark a hypothesis as tentative. Include a limit here when it changes the meaning of the result; put supporting evidence and smaller limits in the body. For example: "The deck highlights chats needing you; phone layout is unverified."
 - **Next step:** one action under 120 characters, naming what the user must do and where. For a command, give the exact runnable command when known; put longer commands in the body and refer to them here.
 - **Recap:** from the second turn on, cover the whole chat: goal, settled direction and open work. Preserve earlier choices and their essential reason while they still constrain the task; update them when superseded.
 - **Decision:** record a consequential choice actually made this turn, with `->` and its reason. Use `(over …)` for meaningful alternatives, separated with commas. A choice still waiting on the user belongs in `Next step`; omit `Decision` when no trade-off was settled.
@@ -47,7 +47,7 @@ Any value other than `none` places the chat into **Needs you**. Choose by the ac
 
 An optional suggestion belongs in the body, with `Next step: none`. Do not invent a publication requirement after a standalone local commit; distinguish that from a release workflow explicitly awaiting the user's push. Put every question requiring a user response in `Next step` as well. Keep the answer complete without a trailing polite offer such as "Should I also…?".
 
-With the block at the bottom, stop generating right after it. Keep the body useful: explain the premise needed to understand the result, cite existing artifacts, and summarize relevant verification rather than repeating file inventories or raw logs.
+With the block at the bottom, stop generating right after it. Keep the body useful for an intelligent reader who has not seen your tool calls or opened files: put the key point first, explain the premise needed to understand the result, cite existing artifacts, and summarize relevant verification rather than repeating file inventories or raw logs.
 
 ## Verification before handoff
 

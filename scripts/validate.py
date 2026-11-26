@@ -29,6 +29,13 @@ def validate_skill(folder: Path) -> dict:
         data = yaml.safe_load((folder / "tests" / fixture).read_text())
         if data.get("skill") != folder.name:
             raise ValueError(f"{folder.name}: incorrect fixture identity")
+    for case in yaml.safe_load((folder / "tests" / "eval.yaml").read_text()).get("cases", []):
+        trajectory = case.get("rubric", {}).get("trajectory")
+        if trajectory is None:
+            continue
+        steps = [step for key in ("in_order", "forbidden") for step in trajectory.get(key, [])] if isinstance(trajectory, dict) else []
+        if not steps or set(trajectory) - {"in_order", "forbidden"} or not all(isinstance(step, str) and step.strip() for step in steps):
+            raise ValueError(f"{folder.name}: invalid trajectory in eval case {case.get('name')}")
     source_manifest = yaml.safe_load((folder / "sources.yaml").read_text()) if (folder / "sources.yaml").exists() else {"sources": []}
     for source in source_manifest["sources"]:
         if re.match(r"https?://", source["locator"]):

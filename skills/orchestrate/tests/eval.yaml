@@ -13,6 +13,25 @@ cases:
         - "Shows a short plan with each task's role, then briefs with what-to-ask and runs the code task through delegate-code."
         - "Runs the independent review through second-opinion with Gemini, not Codex or Claude."
         - "Stops before merging and ends with a task table and a your-turn-handoff block whose Next step asks to approve the merge."
+      trajectory:
+        in_order:
+          - "show the plan table with roles"
+          - "brief the task with what-to-ask"
+          - "run delegate-code with codex"
+          - "run second-opinion with gemini on the diff"
+          - "report the task table"
+        forbidden:
+          - "ask the user to choose roles"
+          - "merge before approval"
+
+  - name: small_coupled_work_is_not_split
+    prompt: |
+      In Claude Code: orchestrate renaming `fetch_user` to `load_user` in src/users.py and its two callers in
+      src/api.py. Worker: codex, reviewer: gemini.
+    rubric:
+      expectations:
+        - "Plans one code task, because the parts are small and share files, instead of one delegation per file."
+        - "Does not ask the user for approval to read files, write the brief or start the restricted delegation."
 
   - name: roles_from_instructions
     prompt: |
@@ -62,6 +81,25 @@ cases:
       expectations:
         - "Marks the CHANGELOG.md task with kind local in the plan and does it itself."
         - "Delegates only the search filter task to Codex through delegate-code."
+
+  - name: independent_tasks_continue_before_merge_pause
+    prompt: |
+      In Claude Code: orchestrate two independent tasks, CSV export in src/export.ts and a keyboard
+      shortcut in src/keys.ts. Worker: codex, reviewer: gemini. Assume CSV export finishes review first
+      and is ready to merge while the keyboard shortcut has not run yet.
+    rubric:
+      expectations:
+        - "Does not stop after CSV export alone to wait for merge approval when the keyboard shortcut task is independent."
+        - "Runs and reviews the independent keyboard shortcut task too, then pauses once with both ready tasks for the user to approve."
+
+  - name: stuck_worker_triggers_one_diagnostic_consult
+    prompt: |
+      In Claude Code: orchestrate fixing the cache invalidation bug with Codex as worker and Gemini as
+      reviewer. Codex fails the same cache test twice, even after one correction.
+    rubric:
+      expectations:
+        - "Runs one bounded read-only diagnostic pass through second-opinion with Gemini on the brief, diff and error output before stopping and reporting to the user."
+        - "Does not silently switch workers or start an open-ended fix loop."
 
 threshold:
   pass_rate: 0.8

@@ -180,5 +180,22 @@ cases:
         - "Shows Gemini's Critical and your Important side by side with a one-line reason."
         - "Does not replace Gemini's rating silently or drop the finding."
 
+  - name: safeguard_refusal_is_not_success
+    prompt: |
+      Ask Claude to review PLAN.md and explain its full step-by-step reasoning. Assume Claude's JSON comes back
+      with stop_reason "refusal".
+    rubric:
+      expectations:
+        - "Asks for conclusions with their evidence instead of a written-out chain of reasoning."
+        - "Reports the runner's `refusal` status as no completed opinion and does not retry the same prompt automatically."
+
+  - name: optional_model_and_effort_hints
+    prompt: |
+      From Codex, ask Claude using sonnet at high effort to review our uncommitted auth changes without editing files.
+    rubric:
+      expectations:
+        - "Passes `--model sonnet` and `--effort high` to `scripts/run_advisor.py` after checking the CLI supports them."
+        - "Asks for concise, evidence-backed findings without adding an arbitrary word-count budget."
+
 threshold:
   pass_rate: 0.8

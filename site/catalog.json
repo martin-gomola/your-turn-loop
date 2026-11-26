@@ -75,7 +75,7 @@
     {
       "id": "orchestrate",
       "label": "orchestrate",
-      "version": "0.2.0",
+      "version": "0.4.0",
       "sourcePath": "skills/orchestrate",
       "description": "Give one goal; it picks a worker and reviewer and runs the loop without pasting.",
       "usage": "$orchestrate Add CSV export to the filtered table. Worker: codex, reviewer: claude.",
@@ -84,7 +84,7 @@
     {
       "id": "what-to-ask",
       "label": "what-to-ask",
-      "version": "0.5.1",
+      "version": "0.5.3",
       "sourcePath": "skills/what-to-ask",
       "description": "Turn rough notes or another agent's result into a prompt.",
       "usage": "$what-to-ask Write a prompt for adding CSV export to the filtered table.",
@@ -93,7 +93,7 @@
     {
       "id": "second-opinion",
       "label": "second-opinion",
-      "version": "0.7.0",
+      "version": "0.9.0",
       "sourcePath": "skills/second-opinion",
       "description": "Get an external model opinion through local CLIs.",
       "usage": "$second-opinion claude Review my uncommitted changes without editing files.",
@@ -111,7 +111,7 @@
     {
       "id": "delegate-code",
       "label": "delegate-code",
-      "version": "0.11.0",
+      "version": "0.13.0",
       "sourcePath": "skills/delegate-code",
       "description": "Hand a coding task to Codex, Claude or Antigravity in a worktree and review the diff.",
       "usage": "$delegate-code Have Codex add CSV export to the filtered table, then review its diff.",
@@ -120,7 +120,7 @@
     {
       "id": "your-turn-handoff",
       "label": "your-turn-handoff",
-      "version": "0.9.6",
+      "version": "0.9.7",
       "sourcePath": "skills/your-turn-handoff",
       "description": "Add a clear result and next step to agent replies.",
       "usage": "$your-turn-handoff Use the handoff format for replies in this chat.",

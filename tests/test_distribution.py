@@ -82,6 +82,12 @@ class DistributionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "private path"):
             validator.validate(self.root)
 
+    def test_malformed_eval_trajectory_is_rejected(self):
+        path = self.root / "skills/delegate-code/tests/eval.yaml"
+        path.write_text(path.read_text().replace("      trajectory:\n        in_order:", "      trajectory:\n        in_sequence:", 1))
+        with self.assertRaisesRegex(ValueError, "invalid trajectory"):
+            validator.validate(self.root)
+
     def test_standalone_skill_requires_its_license(self):
         (self.root / "skills/what-to-ask/LICENSE").unlink()
         with self.assertRaisesRegex(ValueError, "include a license"):
