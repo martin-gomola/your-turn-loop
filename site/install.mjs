@@ -30,6 +30,7 @@ if (typeof document !== 'undefined') {
   const byId = id => document.getElementById(id);
   let catalog;
   let resetCopy;
+
   // Colours a command token by token; textContent, and so what Copy copies, stays the command.
   function paint(target, command) {
     let flag = '';
@@ -42,9 +43,7 @@ if (typeof document !== 'undefined') {
       return span;
     }));
   }
-  function badge(text, on) {
-    const span = document.createElement('span'); span.textContent = text; span.toggleAttribute('data-on', on); return span;
-  }
+
   function render() {
     clearTimeout(resetCopy);
     byId('copy').textContent = 'Copy command';
@@ -60,6 +59,7 @@ if (typeof document !== 'undefined') {
     byId('install-help').hidden = !ready;
     byId('your-turn-link').hidden = !ids.includes('your-turn-handoff');
     byId('status').textContent = '';
+
     let selected = false;
     if (catalog.bundle) {
       const bundle = catalog.bundle.steps.flatMap(step => step.skills);
@@ -81,23 +81,19 @@ if (typeof document !== 'undefined') {
       byId('flow-armed').textContent = `${armed}/${bundle.length} armed`;
       byId('flow-armed').style.setProperty('--p', armed / bundle.length);
     }
+
     if (ready) paint(byId('commands'), installation(skills, agents, catalog.repository, scope));
     else byId('commands').replaceChildren();
     byId('preview').hidden = ready;
     if (!ready) {
       paint(byId('preview'), format(ids.length ? ids : ['<skills>'], agents.length ? agents.map(agent => agentIds[agent]) : ['<agents>'], catalog.repository, scope));
-      const cursor = document.createElement('span'); cursor.className = 'cursor'; byId('preview').append(cursor);
     }
     byId('preview-load').hidden = ready || !catalog.bundle || selected;
     byId('term-path').textContent = scope === 'project' ? '~/your-project' : '~';
-    byId('summary').hidden = false;
-    byId('summary').replaceChildren(
-      badge(`${skills.length} ${skills.length === 1 ? 'skill' : 'skills'}`, skills.length > 0),
-      badge(`${agents.length} ${agents.length === 1 ? 'agent' : 'agents'}`, agents.length > 0),
-      badge(scope === 'project' ? 'project scope' : 'global scope', ready));
     byId('where').textContent = ready
-      ? `Run in ${scope === 'project' ? 'your project folder' : 'your terminal'}.`
-      : !skills.length ? 'Choose one or more skills to get started.' : 'Choose the agents you use to get your install command.';
+      ? `Paste in ${scope === 'project' ? 'your project folder' : 'your terminal'}.`
+      : !skills.length ? 'Choose one or more skills to get your install command.' : 'Choose the agents you use to get your install command.';
+
     byId('examples').replaceChildren();
     const tutorial = bundleExample(catalog.bundle, ids, agents);
     if (tutorial) {
@@ -107,7 +103,7 @@ if (typeof document !== 'undefined') {
         const item = document.createElement('li'); const name = document.createElement('code'); name.textContent = step.skill;
         item.append(name, ` ${step.text}`); steps.append(item);
       }
-      const value = document.createElement('p'); value.className = 'field-help'; value.textContent = tutorial.value;
+      const value = document.createElement('p'); value.className = 'help'; value.textContent = tutorial.value;
       byId('examples').append(prompt, steps, value);
     } else for (const skill of skills) {
       const example = document.createElement('pre'); example.tabIndex = 0;
@@ -115,6 +111,7 @@ if (typeof document !== 'undefined') {
       byId('examples').append(example);
     }
   }
+
   document.querySelector('.choices').addEventListener('change', () => { if (catalog) render(); });
   byId('copy').addEventListener('click', async () => {
     const command = byId('commands').textContent;
@@ -136,7 +133,8 @@ if (typeof document !== 'undefined') {
       byId('status').textContent = 'Clipboard unavailable. Copy the selected command manually.';
     }
   });
-  fetch('catalog.json').then(response => {if (!response.ok) throw Error('Catalog unavailable'); return response.json();}).then(data => {
+
+  fetch('catalog.json').then(response => { if (!response.ok) throw Error('Catalog unavailable'); return response.json(); }).then(data => {
     if (!data.skills?.length) throw Error('Empty catalog');
     // Validate every catalogue value before it can enter a shell command.
     installation(data.skills, Object.keys(agentIds), data.repository);
@@ -162,17 +160,24 @@ if (typeof document !== 'undefined') {
         const state = document.createElement('span'); state.className = 'step-state'; head.append(number, state);
         const title = document.createElement('strong'); title.textContent = step.title;
         const text = document.createElement('small'); text.textContent = step.text;
-        const chips = document.createElement('span'); chips.className = 'flow-chips';
-        for (const id of step.skills) {
-          const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'flow-chip';
-          chip.dataset.skill = id; chip.textContent = id; chip.title = `Toggle ${id}`;
-          chip.addEventListener('click', () => {
-            const input = [...document.querySelectorAll('input[name="skill"]')].find(box => box.value === id);
-            if (input) { input.checked = !input.checked; render(); }
-          });
-          chips.append(chip);
+        if (step.skills.length) {
+          const chips = document.createElement('span'); chips.className = 'flow-chips';
+          for (const id of step.skills) {
+            const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'flow-chip';
+            chip.dataset.skill = id; chip.textContent = id; chip.title = `Toggle ${id}`;
+            chip.addEventListener('click', () => {
+              const input = [...document.querySelectorAll('input[name="skill"]')].find(box => box.value === id);
+              if (input) { input.checked = !input.checked; render(); }
+            });
+            chips.append(chip);
+          }
+          item.append(head, title, text, chips);
+        } else {
+          const copy = document.createElement('div'); copy.className = 'closing-copy';
+          copy.append(title, text);
+          item.append(head, copy);
         }
-        item.append(head, title, text, chips); byId('flow-steps').append(item);
+        byId('flow-steps').append(item);
       });
       byId('flow-select').addEventListener('click', () => {
         const bundle = data.bundle.steps.flatMap(step => step.skills);
@@ -189,6 +194,6 @@ if (typeof document !== 'undefined') {
     byId('install-panel').dataset.state = 'error';
     byId('where').textContent = 'Could not load the skill list. Reload this page to try again.';
     byId('copy').disabled = true; byId('install-content').hidden = true; byId('install-help').hidden = true;
-    byId('summary').hidden = true; byId('preview').hidden = true; byId('preview-load').hidden = true;
+    byId('preview').hidden = true; byId('preview-load').hidden = true;
   });
 }

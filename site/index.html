@@ -3,32 +3,41 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="Install a handoff protocol for working across AI coding agents and meet DeeTee, a custom Codex pet.">
-<title>Choose your skills · Your Turn Loop</title>
+<meta name="description" content="Portable cross-agent skills that let one orchestrator agent plan, brief, delegate, and review across Codex, Claude Code, Cursor, Antigravity, and Gemini CLI.">
+<title>Your Turn Loop · Cross-agent skills for your coding agents</title>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch{document.documentElement.dataset.theme='light'}</script>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="style.css?v=loop-row-1">
+<link rel="stylesheet" href="style.css?v=2">
 <script type="module" src="theme.mjs?v=1"></script>
-<script type="module" src="install.mjs?v=polish-1"></script>
+<script type="module" src="install.mjs?v=2"></script>
 <body>
 <!-- GitHub mark from Primer Octicons; license in third-party/primer-octicons-MIT.txt. -->
 <header>
   <a class="brand" href="https://martin-gomola.github.io/your-turn/" aria-label="Your Turn">
     <svg class="brand-icon" viewBox="0 0 64 64" aria-hidden="true"><rect class="brand-icon__tile" x="1" y="1" width="62" height="62" rx="14"/><g class="brand-icon__queue"><circle cx="18" cy="20" r="3.5"/><circle cx="29" cy="20" r="3.5"/></g><path class="brand-icon__route" d="M44 16v17c0 4.418-3.582 8-8 8H20"/><path class="brand-icon__route" d="m27 33-9 8 9 8"/><circle class="brand-icon__active" cx="44" cy="16" r="4.5"/></svg>
-    <span class="brand-name"><span>Your Turn</span><span class="brand-suffix"><span aria-hidden="true">/ </span>Loop</span></span>
+    <span>Your Turn</span>
   </a>
-  <a class="repo" href="https://github.com/martin-gomola/your-turn-loop" aria-label="Your Turn Loop on GitHub"><svg class="github-mark" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.766 11.328c-2.063-.25-3.516-1.734-3.516-3.656 0-.781.281-1.625.75-2.188-.203-.515-.172-1.609.063-2.062.625-.078 1.468.25 1.968.703.594-.187 1.219-.281 1.985-.281.765 0 1.39.094 1.953.265.484-.437 1.344-.765 1.969-.687.218.422.25 1.515.046 2.047.5.593.766 1.39.766 2.203 0 1.922-1.453 3.375-3.547 3.64.531.344.89 1.094.89 1.954v1.625c0 .468.391.734.86.547C13.781 14.359 16 11.53 16 8.03 16 3.61 12.406 0 7.984 0 3.563 0 0 3.61 0 8.031a7.88 7.88 0 0 0 5.172 7.422c.422.156.828-.125.828-.547v-1.25c-.219.094-.5.156-.75.156-1.031 0-1.64-.562-2.078-1.609-.172-.422-.36-.672-.719-.719-.187-.015-.25-.093-.25-.187 0-.188.313-.328.625-.328.453 0 .844.281 1.25.86.313.452.64.655 1.031.655s.641-.14 1-.5c.266-.265.47-.5.657-.656"/></svg><span>GitHub</span><span aria-hidden="true">↗</span></a>
+  <nav class="site-nav" aria-label="Product parts">
+    <a href="https://martin-gomola.github.io/your-turn/">Inbox</a>
+    <a href="./" aria-current="page">Loop</a>
+    <a href="spec.html">Spec</a>
+  </nav>
+  <a class="repo" href="https://github.com/martin-gomola/your-turn-loop" aria-label="Your Turn Loop on GitHub"><svg class="github-mark" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.766 11.328c-2.063-.25-3.516-1.734-3.516-3.656 0-.781.281-1.625.75-2.188-.203-.515-.172-1.609.063-2.062.625-.078 1.468.25 1.968.703.594-.187 1.219-.281 1.985-.281.765 0 1.39.094 1.953.265.484-.437 1.344-.765 1.969-.687.218.422.25 1.515.046 2.047.5.593.766 1.39.766 2.203 0 1.922-1.453 3.375-3.547 3.64.531.344.89 1.094.89 1.954v1.625c0 .468.391.734.86.547C13.781 14.359 16 11.53 16 8.03 16 3.61 12.406 0 7.984 0 3.563 0 3.61 0 8.031a7.88 7.88 0 0 0 5.172 7.422c.422.156.828-.125.828-.547v-1.25c-.219.094-.5.156-.75.156-1.031 0-1.64-.562-2.078-1.609-.172-.422-.36-.672-.719-.719-.187-.015-.25-.093-.25-.187 0-.188.313-.328.625-.328.453 0 .844.281 1.25.86.313.452.64.655 1.031.655s.641-.14 1-.5c.266-.265.47-.5.657-.656"/></svg><span>GitHub</span><span aria-hidden="true">↗</span></a>
   <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to dark theme" title="Switch to dark theme"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5a8.5 8.5 0 1 0 12 12Z"/></svg></button>
 </header>
 <main>
-  <h1>Choose your skills</h1>
-  <p class="companion">Companion skills for <a href="https://martin-gomola.github.io/your-turn/">Your Turn <span aria-hidden="true">↗</span></a>, the inbox that shows which agent chats need you. The skills also work on their own.</p>
-  <ul class="trust" aria-label="What the loop runs on">
-    <li>Local-first CLI</li><li>Zero API keys</li><li>Git worktree isolation</li><li>Human-in-the-loop</li>
-  </ul>
+  <section class="hero">
+    <h1>One orchestrator.<br>Every agent in the loop.</h1>
+    <p class="lead">Portable skills that let one orchestrator agent plan, brief, delegate in git worktrees, and review across Codex, Claude Code, Cursor, Antigravity, and Gemini CLI. Local-first, zero API keys, and works on its own or with the <a href="https://martin-gomola.github.io/your-turn/">Your Turn inbox</a>.</p>
+    <div class="hero-actions">
+      <a class="button-primary" href="#install">Install skills</a>
+      <a class="button-secondary" href="spec.html">Handoff protocol spec</a>
+    </div>
+  </section>
+
   <section id="flow" class="flow hud-panel" aria-labelledby="flow-title" hidden>
     <img class="flow-art flow-art-light" src="flow/agent-loop.webp?v=6" alt="Four panels: you hand your notes to Claude, the orchestrator; Claude plans and delegates; Codex builds in its own worktree while Gemini reviews it; the result lands in your Your Turn inbox, and you start the next brief from the card that needs you." width="1600" height="600">
-    <img class="flow-art flow-art-dark" src="flow/agent-loop-dark.webp?v=3" alt="Four panels: you hand your notes to Claude, the orchestrator; Claude plans and delegates; Codex builds in its own worktree while Gemini reviews it; the result lands in your Your Turn inbox, and you start the next brief from the card that needs you." width="1600" height="600" loading="lazy">
+    <img class="flow-art flow-art-dark" src="flow/agent-loop-dark.webp?v=3" alt="Four panels: you hand your notes to Claude, the orchestrator; Claude plans and delegates; Codex builds in its own worktree while Gemini reviews it; the result lands in your Your Turn inbox, and you start the next brief from the card that needs you." width="1600" height="600">
     <div class="flow-heading">
       <div>
         <p class="flow-kicker">Bundle</p>
@@ -40,76 +49,92 @@
         <button id="flow-select" type="button" aria-pressed="false">Select bundle</button>
       </div>
     </div>
-    <div class="flow-pipeline">
-      <ol id="flow-steps" class="flow-steps"></ol>
-    </div>
-    <p class="flow-loop"><span aria-hidden="true">↺</span> Results that need you show up in the <a href="https://martin-gomola.github.io/your-turn/">Your Turn inbox</a>. You carry one back: paste its Outcome and Next step into what-to-ask for the next brief. No skill moves it for you.</p>
-    <a class="flow-spec" href="spec.html">Read the handoff protocol spec <span aria-hidden="true">→</span></a>
+    <ol id="flow-steps" class="flow-steps"></ol>
+    <p class="flow-loop"><span aria-hidden="true">↺</span> Results that need you show up in the <a href="https://martin-gomola.github.io/your-turn/">Your Turn inbox</a>. You carry one back to the orchestrator as the next brief. No skill moves it for you.</p>
   </section>
-  <div class="workspace">
-    <section class="choices hud-panel" aria-label="Setup">
-      <fieldset class="field-group agent-fieldset">
-        <legend class="field-label"><span class="field-step" aria-hidden="true">01</span><span>Skills</span></legend>
-        <div id="skills" class="skill-options"><p class="field-help">Loading skills…</p></div>
-      </fieldset>
-      <fieldset class="field-group agent-fieldset">
-        <legend class="field-label"><span class="field-step" aria-hidden="true">02</span><span>Coding agents</span></legend>
-        <div class="agent-options agent-list">
-          <label><input type="checkbox" name="agent" value="codex" checked><img class="agent-logo" src="icons/codex.svg" width="24" height="24" alt=""> <span>Codex</span></label>
-          <label><input type="checkbox" name="agent" value="claude" checked><img class="agent-logo" src="icons/claude.svg" width="24" height="24" alt=""> <span>Claude Code</span></label>
-          <label><input type="checkbox" name="agent" value="cursor"><img class="agent-logo" src="icons/cursor.svg" width="24" height="24" alt=""> <span>Cursor</span></label>
-          <label><input type="checkbox" name="agent" value="antigravity"><img class="agent-logo" src="icons/antigravity.svg" width="24" height="24" alt=""> <span>Antigravity CLI</span></label>
-          <label><input type="checkbox" name="agent" value="gemini"><img class="agent-logo" src="icons/gemini.svg" width="24" height="24" alt=""> <span>Gemini CLI</span></label>
+
+  <section id="install" class="install-section" aria-labelledby="install-title">
+    <div class="section-head">
+      <p class="kicker">Install</p>
+      <h2 id="install-title">Build your install command</h2>
+      <p class="section-text">Install the full loop or pick individual skills. Runs locally through <code>npx skills</code> using the agent logins you already have.</p>
+    </div>
+
+    <div class="workspace">
+      <section class="choices hud-panel" aria-label="Setup">
+        <fieldset class="field-group agent-fieldset">
+          <legend class="field-label"><span class="field-step" aria-hidden="true">01</span><span>Skills</span></legend>
+          <div id="skills" class="skill-options"><p class="field-help">Loading skills…</p></div>
+        </fieldset>
+        <fieldset class="field-group agent-fieldset">
+          <legend class="field-label"><span class="field-step" aria-hidden="true">02</span><span>Coding agents</span></legend>
+          <div class="agent-options agent-list">
+            <label><input type="checkbox" name="agent" value="codex" checked><img class="agent-logo" src="icons/codex.svg" width="24" height="24" alt=""> <span>Codex</span></label>
+            <label><input type="checkbox" name="agent" value="claude" checked><img class="agent-logo" src="icons/claude.svg" width="24" height="24" alt=""> <span>Claude Code</span></label>
+            <label><input type="checkbox" name="agent" value="cursor"><img class="agent-logo" src="icons/cursor.svg" width="24" height="24" alt=""> <span>Cursor</span></label>
+            <label><input type="checkbox" name="agent" value="antigravity"><img class="agent-logo" src="icons/antigravity.svg" width="24" height="24" alt=""> <span>Antigravity CLI</span></label>
+            <label><input type="checkbox" name="agent" value="gemini"><img class="agent-logo" src="icons/gemini.svg" width="24" height="24" alt=""> <span>Gemini CLI</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="field-group agent-fieldset">
+          <legend class="field-label"><span class="field-step" aria-hidden="true">03</span><span>Make skills available in</span></legend>
+          <div class="agent-options scope-options">
+            <label><input type="radio" name="scope" value="project" checked><span><strong>One project</strong><small>Run from your project folder.</small></span></label>
+            <label><input type="radio" name="scope" value="global"><span><strong>All my projects</strong><small>Every project on this computer.</small></span></label>
+          </div>
+        </fieldset>
+        <p id="your-turn-link" class="related" hidden>Want the local inbox for these handoffs? <a href="https://martin-gomola.github.io/your-turn/">Set up Your Turn <span aria-hidden="true">↗</span></a></p>
+      </section>
+
+      <section id="install-panel" class="result terminal hud-panel" data-state="empty" aria-labelledby="result-title">
+        <div class="term-bar">
+          <span class="term-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <h3 id="result-title">Your command</h3>
+          <span id="term-path" class="term-path" aria-hidden="true">~/your-project</span>
         </div>
-      </fieldset>
-      <fieldset class="field-group agent-fieldset">
-        <legend class="field-label"><span class="field-step" aria-hidden="true">03</span><span>Make skills available in</span></legend>
-        <div class="agent-options scope-options">
-          <label><input type="radio" name="scope" value="project" checked><span>One project<small>Run from your project folder.</small></span></label>
-          <label><input type="radio" name="scope" value="global"><span>All my projects<small>Every project on this computer.</small></span></label>
+        <div class="term-body">
+          <pre id="preview" aria-hidden="true"><span class="tok-cmd">npx skills add</span> <span class="tok-ph">&lt;skills&gt;</span></pre>
+          <div id="install-content" hidden>
+            <pre id="commands" tabindex="0" aria-label="Install command"></pre>
+          </div>
+          <div class="term-actions">
+            <button id="copy" class="copy-button" type="button" disabled>Copy command</button>
+            <button id="preview-load" class="term-pill" type="button" hidden>Load the full loop</button>
+            <p id="status" role="status" aria-live="polite"></p>
+          </div>
+          <p id="where" class="help" role="status">Choose skills and agents to get your install command.</p>
+          <div id="install-help" hidden>
+            <p class="help">Requires <a href="https://nodejs.org/en/download">Node.js 22.20+</a> and Git. Review the installer prompts, then start a new agent chat.</p>
+            <details class="example-block"><summary>Try your skills in chat</summary><div id="examples"></div></details>
+          </div>
         </div>
-      </fieldset>
-      <a id="your-turn-link" class="related" href="https://github.com/martin-gomola/your-turn#quick-start" hidden>Set up the Your Turn inbox <span aria-hidden="true">↗</span></a>
-    </section>
-    <section id="install-panel" class="result terminal hud-panel" data-state="empty" aria-labelledby="result-title">
-      <div class="term-bar">
-        <span class="term-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-        <h2 id="result-title">Install</h2>
-        <span id="term-path" class="term-path" aria-hidden="true">~/your-project</span>
-      </div>
-      <div class="term-body">
-        <p id="summary" class="term-badges"></p>
-        <pre id="preview" aria-hidden="true"><span class="tok-cmd">npx skills add</span> <span class="tok-ph">&lt;skills&gt;</span><span class="cursor"></span></pre>
-        <p id="where" role="status">Choose skills and agents to get your install command.</p>
-        <button id="preview-load" class="term-pill" type="button" hidden>Load the full loop</button>
-        <div id="install-content" hidden>
-          <pre id="commands" tabindex="0" aria-label="Install command"></pre>
-        </div>
-        <div class="term-actions">
-          <button id="copy" type="button" disabled>Copy command</button>
-          <p id="status" role="status" aria-live="polite"></p>
-        </div>
-        <div id="install-help" hidden>
-          <p class="field-help">Requires <a href="https://nodejs.org/en/download">Node.js 22.20+</a> and Git. Review the installer prompts, then start a new agent chat.</p>
-          <details class="example-block"><summary>Try your skills in chat</summary><div id="examples"></div></details>
-        </div>
-      </div>
-    </section>
-  </div>
+      </section>
+    </div>
+  </section>
+
   <section class="pet-section hud-panel" aria-labelledby="pet-title">
-    <div class="pet-frame"><img class="pet-preview" src="pets/deetee/preview.gif?v1" alt="DeeTee, a cheerful robotic data terrier" width="192" height="208" loading="lazy"></div>
-    <div>
-      <div class="pet-head"><p class="panel-title">Codex pet</p><span class="pet-tag">Easter egg · Companion 01</span></div>
+    <div class="pet-frame">
+      <picture>
+        <source srcset="pets/deetee/preview-still.png" media="(prefers-reduced-motion: reduce)">
+        <img class="pet-preview" src="pets/deetee/preview.gif?v1" alt="DeeTee, a cheerful robotic data terrier" width="192" height="208" loading="lazy">
+      </picture>
+    </div>
+    <div class="pet-body">
+      <div class="pet-head"><p class="kicker">Codex pet</p><span class="pet-tag">Easter egg · Companion 01</span></div>
       <h2 id="pet-title">Meet DeeTee</h2>
       <p>A cheerful robotic data terrier who sniffs out metrics and celebrates clean queries.</p>
       <div class="pet-actions">
-        <a class="button-install" href="codex://pets/install?name=DeeTee&amp;imageUrl=https%3A%2F%2Fmartin-gomola.github.io%2Fyour-turn-loop%2Fpets%2Fdeetee%2Fspritesheet.webp&amp;description=A%20cheerful%20robotic%20data%20terrier%20who%20sniffs%20out%20metrics%20and%20celebrates%20clean%20queries.&amp;spriteVersionNumber=2">Install in Codex</a>
+        <a class="button-secondary" href="codex://pets/install?name=DeeTee&amp;imageUrl=https%3A%2F%2Fmartin-gomola.github.io%2Fyour-turn-loop%2Fpets%2Fdeetee%2Fspritesheet.webp&amp;description=A%20cheerful%20robotic%20data%20terrier%20who%20sniffs%20out%20metrics%20and%20celebrates%20clean%20queries.&amp;spriteVersionNumber=2">Install in Codex</a>
         <a href="pets/deetee/spritesheet.webp" download="deetee-spritesheet.webp">Download spritesheet <span aria-hidden="true">↓</span></a>
       </div>
-      <p class="pet-help">Open this page on a computer with Codex installed. The button opens the pet install flow when available in your app.</p>
-      <a href="https://learn.chatgpt.com/docs/app/commands#pets">Pet installation documentation <span aria-hidden="true">↗</span></a>
+      <p class="pet-help">Open this page on a computer with Codex installed. <a href="https://learn.chatgpt.com/docs/app/commands#pets">Pet installation documentation <span aria-hidden="true">↗</span></a></p>
     </div>
   </section>
-  <footer class="app-footer"><a href="https://github.com/martin-gomola/your-turn-loop/blob/main/docs/install.md">Update or remove a skill <span aria-hidden="true">↗</span></a></footer>
+
+  <footer class="app-footer">
+    <a class="footer-home" href="https://martin-gomola.github.io/your-turn/">Your Turn inbox <span aria-hidden="true">↗</span></a>
+    <a href="spec.html">Handoff spec</a>
+    <a href="https://github.com/martin-gomola/your-turn-loop/blob/main/docs/install.md">Update or remove a skill <span aria-hidden="true">↗</span></a>
+  </footer>
 </main>
 </body></html>
