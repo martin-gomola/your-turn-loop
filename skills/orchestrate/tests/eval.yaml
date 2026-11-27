@@ -112,5 +112,18 @@ cases:
         - "Each Metrics cell compactly shows whichever of wall time, turns, tokens or cost the runner reported, omitting unreported fields such as cost, and is `-` only when a row has no metrics at all."
         - "Ends with one your-turn-handoff block whose Next step is the orchestrator's merge approval, and does not relay a worker's Next step as a separate human action."
 
+  - name: goal_gap_reported_not_started
+    prompt: |
+      In Claude Code: orchestrate two independent tasks, CSV export in src/export.ts and a keyboard
+      shortcut in src/keys.ts. Worker: codex, reviewer: gemini. Done criteria: CSV export works, the
+      shortcut works, and the README documents both. Neither brief covers the README criterion. Assume
+      both tasks are ready to merge and not yet on HEAD.
+    rubric:
+      expectations:
+        - "Writes the goal, the done criteria and what is out of scope at the top of plan.md."
+        - "Reports the README criterion that no brief states as one more table row with status `not started`."
+        - "Does not delegate or start the `not started` row."
+        - "Judges the ready-to-merge tasks against the done criteria from their worktrees, not from HEAD."
+
 threshold:
   pass_rate: 0.8

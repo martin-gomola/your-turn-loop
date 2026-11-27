@@ -1,7 +1,7 @@
 ---
 name: orchestrate
 metadata:
-  version: "0.4.1"
+  version: "0.4.2"
 description: Takes one goal with several parts, splits it into tasks, assigns a worker and reviewer among the local Codex, Claude Code and Antigravity CLIs and routes images, then runs the Your Turn Loop skills to the end without the user pasting between agents. Use when the user has a multi-task goal to coordinate across agents, names roles such as "worker codex, reviewer claude", or asks the agent to orchestrate. Avoid for a single brief, one read-only review, one delegation of one scoped task, an image alone, or work the current agent should do itself.
 ---
 
@@ -59,7 +59,8 @@ Do not swap in another agent without the user's approval.
 1. **Pin the goal.** State the goal, the done criteria and what is out of scope
    in a few lines. Settle open points as `what-to-ask` does.
 2. **Plan.** Split the goal as `delegate-code` describes under "Several
-   delegations", and keep its `plan.md` for two or more code tasks. Each
+   delegations", and keep its `plan.md` for two or more code tasks.
+   Write the goal, the done criteria and what is out of scope at the top of that `plan.md`. Each
    delegated task costs a brief, a worktree, a worker run and a review, and
    uses the user's quota. Delegate a part only when it is independent of the
    others or too large to review as one diff; keep tightly coupled or small
@@ -109,7 +110,8 @@ Do not swap in another agent without the user's approval.
    independent tasks and their reviews before pausing, so the user can review
    and approve ready tasks together. Otherwise keep going until every task is
    ready to merge, merged, failed, blocked or waiting on the user.
-7. **Report** one table for the goal:
+7. **Report** one table for the goal.
+   When `plan.md` exists, judge its done criteria against each code task's brief and worktree, including a task that is ready to merge and not yet on `HEAD`. A criterion that no brief states is one more table row with status `not started`. Do not start that row. Add no such row when every criterion is already stated in some brief. Skip this judgment while any planned code task is failed, blocked or still running, and name that task in the table.
 
    | Task | Agent and role | Status | Check | Metrics | Left for you |
    | --- | --- | --- | --- | --- | --- |

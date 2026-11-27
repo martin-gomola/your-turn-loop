@@ -75,7 +75,7 @@
     {
       "id": "orchestrate",
       "label": "orchestrate",
-      "version": "0.4.1",
+      "version": "0.4.2",
       "sourcePath": "skills/orchestrate",
       "description": "Give one goal; it picks a worker and reviewer and runs the loop without pasting.",
       "usage": "$orchestrate Add CSV export to the filtered table. Worker: codex, reviewer: claude.",
