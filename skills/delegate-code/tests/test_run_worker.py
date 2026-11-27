@@ -47,6 +47,9 @@ message = "" if mode == "empty" else (
 if name == "codex":
     print(json.dumps({"type": "thread.started", "thread_id": "thread-1"}))
     print(json.dumps({"type": "item.completed", "item": {"type": "command_execution", "command": "pytest -q"}}))
+    if os.environ.get("FAKE_USAGE"):
+        print(json.dumps({"type": "turn.completed", "usage": {"input_tokens": 100, "cached_input_tokens": 40, "output_tokens": 10}}))
+        print(json.dumps({"type": "turn.completed", "usage": {"input_tokens": 50, "cached_input_tokens": 20, "output_tokens": "bad"}}))
     Path(args[args.index("-o") + 1]).write_text(message)
     sys.exit(3 if mode == "fail" else 0)
 if name == "claude":
@@ -54,12 +57,21 @@ if name == "claude":
     if mode == "malformed":
         print("not json")
         sys.exit(0)
+    if os.environ.get("FAKE_USAGE") == "huge":
+        # 1e309 parses as float inf; json.dumps cannot write it, so splice it in raw.
+        print(json.dumps({"result": message, "session_id": "sess-1", "subtype": "success", "num_turns": 2.5,
+                          "total_cost_usd": "HUGE", "usage": {"input_tokens": "HUGE", "output_tokens": 5}})
+              .replace('"HUGE"', "1e309"))
+        sys.exit(0)
     print(json.dumps({
         "result": message,
         "session_id": "sess-1",
         "is_error": mode == "budget",
         "subtype": "error_max_budget_usd" if mode == "budget" else "success",
         "stop_reason": "refusal" if mode == "refusal" else "end_turn",
+        **({"num_turns": 7, "total_cost_usd": 0.42, "usage": {
+            "input_tokens": 12, "cache_creation_input_tokens": 300, "cache_read_input_tokens": 4000, "output_tokens": 900,
+        }} if os.environ.get("FAKE_USAGE") else {}),
     }))
     sys.exit(0)
 if name == "agy":
@@ -538,6 +550,84 @@ def test_invalid_cli_arguments_return_json_error(capsys) -> None:
 def test_empty_handoff_field_does_not_swallow_next_line() -> None:
     fields = rw.handoff_fields("**Status:** DONE\n**Outcome:**\n**Next step:** none\n")
     assert fields == {"worker_status": "DONE", "outcome": None, "next_step": "none"}
+
+
+def test_claude_metrics_returned_persisted_and_in_status(env, capsys, monkeypatch) -> None:
+    monkeypatch.setenv("FAKE_USAGE", "1")
+    code, out = start(env, capsys, "claude")
+    assert code == 0, out
+    metrics = out["metrics"]
+    assert isinstance(metrics["wall_seconds"], float) and metrics["wall_seconds"] >= 0
+    assert {k: v for k, v in metrics.items() if k != "wall_seconds"} == {
+        "turns": 7, "cost_usd": 0.42, "input_tokens": 12, "cache_write_tokens": 300,
+        "cache_read_tokens": 4000, "output_tokens": 900,
+    }
+    note = rw.read_note(rw.Layout(env["repo"], "feat"))
+    assert json.loads(note["metrics"]) == {
+        "wall_seconds": metrics["wall_seconds"], "turns": 7, "cost_usd": 0.42, "tokens": 5212,
+    }
+    code, status = call(capsys, "status", "--slug", "feat", "--repo-root", str(env["repo"]))
+    assert status["delegations"][0]["metrics"]["tokens"] == 5212
+    code, out = call(capsys, "resume", "--slug", "feat", "--fix-file", str(env["task"] / "fix.md"),
+                     "--repo-root", str(env["repo"]), "--binary", str(env["bin"] / "claude"))
+    assert code == 0 and out["metrics"]["turns"] == 7
+
+
+def test_codex_metrics_sum_turn_completed_events(env, capsys, monkeypatch) -> None:
+    monkeypatch.setenv("FAKE_USAGE", "1")
+    code, out = start(env, capsys, "codex")
+    assert code == 0, out
+    metrics = out["metrics"]
+    assert isinstance(metrics["wall_seconds"], float)
+    assert (metrics["turns"], metrics["input_tokens"], metrics["cache_read_tokens"], metrics["output_tokens"]) == (2, 150, 60, 10)
+    assert metrics["cost_usd"] is None and metrics["cache_write_tokens"] is None
+    # Codex input_tokens already include cached input: 150 input + 10 output, not + 60 cached.
+    code, status = call(capsys, "status", "--slug", "feat", "--repo-root", str(env["repo"]))
+    assert status["delegations"][0]["metrics"]["tokens"] == 160
+
+
+def test_non_finite_usage_becomes_none_and_run_note_finalizes(env, capsys, monkeypatch) -> None:
+    monkeypatch.setenv("FAKE_USAGE", "huge")
+    code = rw.main(["start", "--slug", "feat", "--worker", "claude", "--brief-file", str(env["task"] / "brief.md"),
+                    "--task-dir", str(env["task"]), "--repo-root", str(env["repo"]), "--binary", str(env["bin"] / "claude")])
+    raw = capsys.readouterr().out.strip().splitlines()[-1]
+    assert "Infinity" not in raw and "NaN" not in raw
+    out = json.loads(raw)
+    assert code == 0 and out["status"] == "ok"
+    metrics = out["metrics"]
+    assert metrics["cost_usd"] is None and metrics["input_tokens"] is None and metrics["turns"] is None
+    assert metrics["output_tokens"] == 5
+    note = rw.read_note(rw.Layout(env["repo"], "feat"))
+    assert note["status"] == "ok" and json.loads(note["metrics"])["tokens"] == 5
+
+
+def test_number_rejects_non_finite_fractional_and_oversized_counts() -> None:
+    for bad in (float("inf"), float("nan"), -1, True, "3", 2.5, float(2**60), 2**60):
+        assert rw.number(bad, int) is None, bad
+    assert rw.number(3.0, int) == 3 and rw.number(7, int) == 7
+    assert rw.number(float("inf"), float) is None and rw.number(0.42, float) == 0.42
+
+
+def test_agy_without_usage_reports_only_wall_seconds(env, capsys) -> None:
+    code, out = start(env, capsys, "agy")
+    assert code == 0, out
+    metrics = out["metrics"]
+    assert isinstance(metrics["wall_seconds"], float)
+    assert all(metrics[k] is None for k in ("turns", "cost_usd", *rw.TOKEN_FIELDS))
+    note = rw.read_note(rw.Layout(env["repo"], "feat"))
+    assert json.loads(note["metrics"])["tokens"] is None
+
+
+def test_metrics_tolerate_malformed_output(tmp_path: Path) -> None:
+    (tmp_path / "result.json").write_text("not json")
+    assert rw.read_metrics("claude", tmp_path, 1.0)["turns"] is None
+    (tmp_path / "result.json").write_text(json.dumps({"num_turns": True, "usage": "x", "total_cost_usd": -1}))
+    metrics = rw.read_metrics("claude", tmp_path, 1.0)
+    assert metrics["turns"] is None and metrics["cost_usd"] is None and metrics["input_tokens"] is None
+    (tmp_path / "result.json").write_text(json.dumps({"stats": {"turns": 3, "input_tokens": 5, "output_tokens": 2}}))
+    metrics = rw.read_metrics("agy", tmp_path, 2.5)
+    assert (metrics["wall_seconds"], metrics["turns"], metrics["input_tokens"], metrics["output_tokens"]) == (2.5, 3, 5, 2)
+    assert rw.read_metrics("codex", tmp_path, 0.0)["turns"] is None  # no events.jsonl
 
 
 def test_start_existing_worktree_after_baseline(env, capsys) -> None:

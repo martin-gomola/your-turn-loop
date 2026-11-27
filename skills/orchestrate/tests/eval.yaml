@@ -101,5 +101,16 @@ cases:
         - "Runs one bounded read-only diagnostic pass through second-opinion with Gemini on the brief, diff and error output before stopping and reporting to the user."
         - "Does not silently switch workers or start an open-ended fix loop."
 
+  - name: report_includes_worker_metrics
+    prompt: |
+      In Claude Code: orchestrate CSV export in src/export.ts and a keyboard shortcut in src/keys.ts.
+      Worker: codex, reviewer: gemini. Assume the runner returns metrics for both workers, for example
+      wall_seconds 312, turns 14 and 1.2M tokens, and both tasks are ready to merge.
+    rubric:
+      expectations:
+        - "The final report table has the columns Task, Agent and role, Status, Check, Metrics and Left for you."
+        - "Each Metrics cell compactly shows whichever of wall time, turns, tokens or cost the runner reported, omitting unreported fields such as cost, and is `-` only when a row has no metrics at all."
+        - "Ends with one your-turn-handoff block whose Next step is the orchestrator's merge approval, and does not relay a worker's Next step as a separate human action."
+
 threshold:
   pass_rate: 0.8

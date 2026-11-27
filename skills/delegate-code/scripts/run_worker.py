@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import shutil
@@ -13,6 +14,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -427,6 +429,87 @@ def read_result(worker: str, task: Path) -> dict[str, object]:
     return result
 
 
+TOKEN_FIELDS = ("input_tokens", "cache_write_tokens", "cache_read_tokens", "output_tokens")
+
+
+MAX_COUNT = 2**53  # largest whole number a float (and a JSON reader) holds exactly
+
+
+def number(value: object, kind: type) -> int | float | None:
+    """A finite, non-negative usage value (whole for int fields), or None if missing or malformed."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if value < 0:
+        return None
+    if kind is int:
+        if isinstance(value, float) and not value.is_integer():
+            return None
+        if value > MAX_COUNT:
+            return None
+    return kind(value)
+
+
+def read_metrics(worker: str, task: Path, wall_seconds: float) -> dict[str, object]:
+    """Usage the worker reported (turns, cost, tokens); None where it reported nothing usable."""
+    metrics: dict[str, object] = {"wall_seconds": wall_seconds, "turns": None, "cost_usd": None}
+    metrics.update(dict.fromkeys(TOKEN_FIELDS))
+    if worker == "codex":
+        totals: dict[str, int] = {}
+        turns = 0
+        for line in read_text(task_file(task, "events.jsonl")).splitlines():
+            try:
+                event = json.loads(line)
+            except ValueError:
+                continue
+            if not isinstance(event, dict) or event.get("type") != "turn.completed":
+                continue
+            turns += 1
+            usage = event.get("usage") if isinstance(event.get("usage"), dict) else {}
+            for key, source in (("input_tokens", "input_tokens"), ("cache_read_tokens", "cached_input_tokens"), ("output_tokens", "output_tokens")):
+                value = number(usage.get(source), int)
+                if value is not None:
+                    totals[key] = totals.get(key, 0) + value
+        metrics.update(turns=turns or None, **totals)
+        return metrics
+    try:
+        data = json.loads(read_text(task_file(task, "result.json")))
+    except ValueError:
+        return metrics
+    if not isinstance(data, dict):
+        return metrics
+    usage = data.get("usage")
+    if worker == "agy" and not isinstance(usage, dict):
+        usage = data.get("stats")
+    usage = usage if isinstance(usage, dict) else {}
+    turns = data.get("num_turns", usage.get("num_turns", usage.get("turns")))
+    cost = data.get("total_cost_usd", usage.get("total_cost_usd", usage.get("cost_usd")))
+    metrics.update(
+        turns=number(turns, int),
+        cost_usd=number(cost, float),
+        input_tokens=number(usage.get("input_tokens"), int),
+        cache_write_tokens=number(usage.get("cache_creation_input_tokens"), int),
+        cache_read_tokens=number(usage.get("cache_read_input_tokens", usage.get("cached_input_tokens")), int),
+        output_tokens=number(usage.get("output_tokens"), int),
+    )
+    return metrics
+
+
+def compact_metrics(metrics: dict[str, object], worker: str) -> str:
+    """Single-line JSON summary for the run note: wall time, turns, cost and total tokens."""
+    # Codex input_tokens already include cached_input_tokens; Claude reports cache tokens separately.
+    fields = ("input_tokens", "output_tokens") if worker == "codex" else TOKEN_FIELDS
+    tokens = [metrics[key] for key in fields if metrics.get(key) is not None]
+    summary = {
+        "wall_seconds": metrics["wall_seconds"],
+        "turns": metrics["turns"],
+        "cost_usd": metrics["cost_usd"],
+        "tokens": sum(tokens) if tokens else None,
+    }
+    return json.dumps(summary, separators=(",", ":"), sort_keys=True, allow_nan=False)
+
+
 def classify(returncode: int, timed_out: bool, result: dict[str, object], log: str = "") -> str:
     if timed_out or returncode == 124:
         return "timeout"
@@ -472,6 +555,7 @@ def execute(layout: Layout, note: dict[str, str], command: list[str], stdin_path
         note.update(pid=str(pid), status="running")
         write_note(layout, note)
 
+    started_at = time.monotonic()
     try:
         returncode, timed_out = run_watched(
             command,
@@ -487,6 +571,7 @@ def execute(layout: Layout, note: dict[str, str], command: list[str], stdin_path
         note["status"] = "failed"
         write_note(layout, note)
         raise RunnerError(f"could not start {worker}: {exc}") from exc
+    metrics = read_metrics(worker, task, round(time.monotonic() - started_at, 1))
     result = read_result(worker, task)
     with open(log_path, "rb") as handle:  # only this invocation's stderr, not an earlier run's denial
         handle.seek(log_offset)
@@ -495,10 +580,12 @@ def execute(layout: Layout, note: dict[str, str], command: list[str], stdin_path
     if result["session_id"]:
         note["session_id"] = check_token(str(result["session_id"]), "session id from worker output")
     note["status"] = status
+    note["metrics"] = compact_metrics(metrics, worker)  # latest run only
     write_note(layout, note)
     return {
         "status": status,
         "exit_code": returncode,
+        "metrics": metrics,
         "worker": worker,
         "access": note["access"],
         "slug": layout.slug,
@@ -700,6 +787,12 @@ def inspect(layout: Layout) -> dict[str, object]:
     except ValueError:
         pass
     entry["elapsed_seconds"] = elapsed
+    try:
+        metrics = json.loads(note.get("metrics") or "null")
+    except ValueError:
+        metrics = None
+    if isinstance(metrics, dict):
+        entry["metrics"] = metrics
     has_final = False
     if worker in WORKERS and note.get("task"):
         try:
@@ -917,7 +1010,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"run_worker {command}: {exc}", file=sys.stderr)
         print(json.dumps({"status": "error", "error": str(exc)}, sort_keys=True))
         return ERROR_EXIT_CODE
-    print(json.dumps(output, sort_keys=True))
+    print(json.dumps(output, sort_keys=True, allow_nan=False))
     return STATUS_EXIT_CODES.get(str(output["status"]), 0)
 
 

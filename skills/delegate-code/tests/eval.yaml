@@ -281,5 +281,15 @@ cases:
           - "git apply before the new diff is reviewed"
           - "run_worker.py cleanup"
 
+  - name: brief_keeps_worker_subtask_clean_in_your_turn
+    prompt: |
+      From Claude Code, have Codex fix the date parser in src/dates.py. The
+      check is `make test`. This runs inside a Your Turn orchestrated thread.
+    rubric:
+      expectations:
+        - "The brief tells the worker to edit with native edit tools and run `make test` alone, unpiped and last after its final code edit, not piped to `tail` or chained with `&& git status`, so Your Turn does not mark the subtask `Edits unchecked`."
+        - "The brief requires `**Next step:** none` whenever Status is DONE or DONE_WITH_CONCERNS, with concerns in the body and Outcome, so the finished subtask does not stay in `Needs you`."
+        - "Allows a human action as Next step only on BLOCKED or NEEDS_CONTEXT."
+
 threshold:
   pass_rate: 0.75

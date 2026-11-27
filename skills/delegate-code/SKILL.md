@@ -1,7 +1,7 @@
 ---
 name: delegate-code
 metadata:
-  version: "0.14.0"
+  version: "0.14.1"
 description: Delegates a scoped implementation task to a local Codex, Claude Code or Antigravity CLI in its own git worktree, then reviews the diff and the returned Outcome and Next step. Use when the user asks to hand coding work to Codex, Claude or Antigravity from another agent. Avoid for read-only opinions, image generation, or work the current agent should do itself.
 ---
 
@@ -21,9 +21,9 @@ Use the worker the user names. If they name none, ask, or pick `codex` for routi
 
 | Subcommand | Workflow step | What it does |
 | --- | --- | --- |
-| `start` | 6, 7 | Checks `.delegate-code/` is ignored, uses the step 4 worktree (`--existing-worktree`) or creates it, writes the run note, runs the worker in restricted mode (unless `--full-access`) under a 1800 s watchdog, and returns `status`, `session_id`, `worker_status`, `outcome` and `next_step` |
-| `resume` | 8 | Sends `--fix-file` to the same session with the same access mode and records the latest session id; a capped Claude run needs the remaining `--max-budget-usd` |
-| `status` | checks | Read-only `running`, `finished`, `abandoned` or `unknown` per delegation |
+| `start` | 6, 7 | Checks `.delegate-code/` is ignored, uses the step 4 worktree (`--existing-worktree`) or creates it, writes the run note, runs the worker in restricted mode (unless `--full-access`) under a 1800 s watchdog, and returns `status`, `session_id`, `worker_status`, `outcome`, `next_step` and `metrics` (`wall_seconds`, `turns`, `cost_usd`, tokens; `null` when the CLI reports none) |
+| `resume` | 8 | Sends `--fix-file` to the same session with the same access mode and records the latest session id and `metrics`; a capped Claude run needs the remaining `--max-budget-usd` |
+| `status` | checks | Read-only `running`, `finished`, `abandoned` or `unknown` per delegation, with the last run's `metrics` summary |
 | `bundle` | 8 | Writes `.delegate-code/<slug>.review/` and returns the `fingerprint` |
 | `apply` | 9 | With `--confirm`, refuses a `--expected-fingerprint` mismatch, then `git apply`s the staged diff into the main checkout; keeps the worktree |
 | `cleanup` | 9 | With `--confirm`, removes a `finished` or `abandoned` worktree, run note, review folder and branch |
@@ -52,14 +52,20 @@ Steps that need no approval once the user asked for the delegation: reading repo
      the files you may change. Stop only for a real blocker: a fix that needs
      a file outside your list, a missing permission or dependency, or a
      settled decision the code contradicts.
+     Edit files with native edit tools, and after your last code edit run
+     the check command alone, unpiped and last (no `| tail`, no `&& ...`).
      End your final message with these lines, each separated by a blank line:
      **Status:** DONE, DONE_WITH_CONCERNS, BLOCKED or NEEDS_CONTEXT.
      **Outcome:** one sentence: what changed and whether the check passed.
-     **Next step:** none, or the one action left for a human.
+     **Next step:** exactly `none` on DONE or DONE_WITH_CONCERNS (the caller
+     owns review and merge; put concerns in the body and Outcome); the one
+     human action only on BLOCKED or NEEDS_CONTEXT.
      If the brief leaves a choice that would change the result, stop before
      editing and answer NEEDS_CONTEXT with your questions; do not guess.
      Never weaken, skip or delete a test to make the check pass.
      ```
+
+     A piped or chained check hides its exit code and Your Turn marks the subtask `Edits unchecked`; a review `Next step` on a finished worker pins it in `Needs you` after you merge.
 
    Leave out credentials, private data, and chat history the task does not need. Reread the brief as the worker, fill anything it would have to guess from the repo or chat, and ask the user only if a guess would change the result. Remove any step the worker must not take (migration, deletion, production or network side effect) unless the user approves it first.
 3. **Preflight.**

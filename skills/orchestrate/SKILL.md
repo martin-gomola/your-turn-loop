@@ -1,7 +1,7 @@
 ---
 name: orchestrate
 metadata:
-  version: "0.4.0"
+  version: "0.4.1"
 description: Takes one goal with several parts, splits it into tasks, assigns a worker and reviewer among the local Codex, Claude Code and Antigravity CLIs and routes images, then runs the Your Turn Loop skills to the end without the user pasting between agents. Use when the user has a multi-task goal to coordinate across agents, names roles such as "worker codex, reviewer claude", or asks the agent to orchestrate. Avoid for a single brief, one read-only review, one delegation of one scoped task, an image alone, or work the current agent should do itself.
 ---
 
@@ -111,12 +111,15 @@ Do not swap in another agent without the user's approval.
    ready to merge, merged, failed, blocked or waiting on the user.
 7. **Report** one table for the goal:
 
-   | Task | Agent and role | Status | Check | Left for you |
-   | --- | --- | --- | --- | --- |
+   | Task | Agent and role | Status | Check | Metrics | Left for you |
+   | --- | --- | --- | --- | --- | --- |
 
-   Status is merged, ready to merge, failed, blocked or not started. End with
-   the `your-turn-handoff` block when it is installed, with the action that
-   unblocks the most work as `Next step`.
+   Status is merged, ready to merge, failed, blocked or not started. Metrics
+   is the runner's `metrics` in one short cell, such as `312s, 14 turns, 1.2M
+   tok, $0.84`, keeping only what was reported, or `-` when nothing was. End
+   with the `your-turn-handoff` block when it is installed, with the action
+   that unblocks the most work as `Next step`. That block is the thread's only
+   human handoff: finished workers return `Next step: none`.
 
 ## Boundaries
 
