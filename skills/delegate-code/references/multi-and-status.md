@@ -14,6 +14,19 @@ When the user asks how a delegation is going, or what is left in `.delegate-code
   - `unknown`: anything else, including a worktree with no note. Never call it abandoned without that evidence.
 - **Cleanup.** List what each finished or abandoned worktree holds (changes, commits, or nothing) and offer to review, keep, or remove it. Remove a worktree, its branch, and its note only after the user approves, and never remove one that is `running` or `unknown`.
 
+With `scripts/run_worker.py` (from the repository root, `$SKILL` being this skill's folder):
+
+```sh
+python3 "$SKILL/scripts/run_worker.py" status                 # every delegation; changes nothing
+python3 "$SKILL/scripts/run_worker.py" status --slug csv-export
+python3 "$SKILL/scripts/run_worker.py" bundle --slug csv-export   # review bundle + fingerprint
+python3 "$SKILL/scripts/run_worker.py" apply --slug csv-export \
+  --expected-fingerprint <hash from bundle> --confirm        # only after the user approves
+python3 "$SKILL/scripts/run_worker.py" cleanup --slug csv-export --confirm
+```
+
+`status` reports each delegation's `state`, `elapsed_seconds`, `changed_files` and, for Codex, `last_event` (type and a short summary from `events.jsonl`). `state` follows the rules above exactly; the run status recorded in the note (`ok`, `failed`, `timeout` and so on) is reported separately as `run_status` and never makes a run `finished` without a final message, so a recent failed run stays `unknown` until its time limit passes. `bundle` and `apply` build the patch from the fingerprinted tree (`git diff --binary HEAD <tree>`), so later index edits cannot change what was reviewed. `apply` fails without touching the main checkout when the fingerprint differs; it never removes the worktree, so rerun the check command in the main checkout before `cleanup`. `cleanup` refuses `running` and `unknown` delegations.
+
 ## Several Delegations
 
 **Split only when it pays.** Keep a request as one delegation when one worker can finish it within the watchdog limit and its parts share most of their files. Split it when the parts touch separate files and can run in parallel, or when one run would be too large to review as one diff. Each extra task costs a brief, a worktree and a review, so do not split for neatness.

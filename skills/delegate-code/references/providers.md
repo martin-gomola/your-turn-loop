@@ -2,6 +2,32 @@
 
 Load this reference when invoking or resuming a worker in `delegate-code` step 6 or step 8. Invoke the binary path resolved in step 3, or `command <worker>`, so a shell function or alias cannot add flags such as `--yolo`.
 
+## Code Mode Runner
+
+`scripts/run_worker.py` builds the commands below, runs them with an argument list (no shell), and owns the watchdog, run note and status classification. Run it from the repository root; `$SKILL` is this skill's folder:
+
+```sh
+# after `git worktree add` and the baseline check in step 4:
+python3 "$SKILL/scripts/run_worker.py" start --slug csv-export --worker codex \
+  --brief-file "$TASK/brief.md" --task-dir "$TASK" --existing-worktree
+python3 "$SKILL/scripts/run_worker.py" start --slug parser --worker claude \
+  --brief-file "$TASK/brief.md" --task-dir "$TASK" \
+  --allow-tool "Bash(pytest tests/test_parse.py)" --effort medium --max-budget-usd 2
+python3 "$SKILL/scripts/run_worker.py" start --slug retry --worker agy \
+  --brief-file "$TASK/brief.md" --task-dir "$TASK" --allow-tool pytest
+# parser was capped at $2, so the correction must name what is left of that cap:
+python3 "$SKILL/scripts/run_worker.py" resume --slug parser --fix-file "$TASK/fix.md" \
+  --effort high --max-budget-usd 0.5
+```
+
+- Without `--existing-worktree`, `start` creates the worktree and starts the worker at once, leaving no room for the step 4 baseline; use it only when the baseline was already recorded. `resume`, `bundle`, `apply` and `cleanup` refuse a path that is a symlink or not a registered worktree on `delegate-code/<slug>`.
+- A Claude task started with `--max-budget-usd` records the cap in the run note; `resume` then refuses to run until you pass the remaining budget explicitly.
+
+- Restricted mode is the default; `--full-access` switches to the bypass flags and only after the user asked for it. `--allow-tool` is a Claude `--allowedTools` entry or an Antigravity program (`pytest` or `command(pytest)`); Codex rejects it. `--max-budget-usd` is Claude only.
+- `--binary <path>` pins the worker binary; otherwise it is resolved on `PATH`. `--timeout-seconds` defaults to 1800; on expiry the runner sends `SIGTERM`, then `SIGKILL`, to the worker's process group.
+- `resume` reuses the worker, `$TASK`, access mode, allowed tools, model and effort from the run note, adds any new `--allow-tool` entries, and saves the session id the worker returns (Antigravity's new `conversation_id`).
+- The JSON reply holds `status` (`ok`, `empty`, `failed`, `refusal`, `permission` or `timeout`; exit code non-zero for all but `ok`), `session_id`, `worktree`, `branch`, `final_message_path`, `worker_log_path`, and the worker's `worker_status`, `outcome` and `next_step` (`null` when missing, so the run is unverified). Contract errors print `{"status": "error"}` and exit 2.
+
 ## Codex (`codex exec`)
 
 Restricted, then full access:
@@ -18,7 +44,8 @@ The session id is `thread_id` in the `thread.started` event of `events.jsonl`. R
 Resume for a correction (restricted uses `-c 'sandbox_mode="workspace-write"'` because `resume` has no `--sandbox` flag):
 
 ```sh
-codex exec resume <access flag> -o "$TASK/last.md" <thread_id> - < "$TASK/fix.md"
+codex exec resume <access flag> --json -o "$TASK/last.md" <thread_id> - \
+  < "$TASK/fix.md" > "$TASK/events.jsonl"
 ```
 
 ## Claude (`claude -p`)
@@ -85,9 +112,9 @@ A worker that writes only to files gives no sign of life: `claude -p` prints not
 - `timeout`: exit 142 (`perl`) or 124 (`timeout`);
 - `failed`: any other exit code; read the tail of `worker.log`.
 
-Treat anything but `ok` as a failed run. Do not wait on an empty file past the limit.
+The runner adds two states, `permission` (Antigravity `denied_actions` or a headless command denial in `worker.log`) and `refusal` (Claude `stop_reason` is `refusal`), and also counts malformed JSON or Claude `is_error: true` as `failed`. Treat anything but `ok` as a failed run. Do not wait on an empty file past the limit.
 
-When the run starts, write `.delegate-code/<slug>.run` next to the worktree (not inside it, so the diff stays clean) with four lines: `worker=<name>`, `task=<$TASK>`, `started=<UTC time>` and `pid=<PID>` (from `$!` when started with `&`; leave it empty if the host does not show it). Delete it with the worktree.
+When the run starts, write `.delegate-code/<slug>.run` next to the worktree (not inside it, so the diff stays clean) with four lines: `worker=<name>`, `task=<$TASK>`, `started=<UTC time>` and `pid=<PID>` (from `$!` when started with `&`; leave it empty if the host does not show it). The runner also writes `access`, `session_id`, `status`, `timeout_seconds`, `model`, `effort` and `allow_tools`. Delete it with the worktree.
 
 ## Error Recovery
 

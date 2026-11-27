@@ -1,7 +1,7 @@
 ---
 name: delegate-code
 metadata:
-  version: "0.13.1"
+  version: "0.14.0"
 description: Delegates a scoped implementation task to a local Codex, Claude Code or Antigravity CLI in its own git worktree, then reviews the diff and the returned Outcome and Next step. Use when the user asks to hand coding work to Codex, Claude or Antigravity from another agent. Avoid for read-only opinions, image generation, or work the current agent should do itself.
 ---
 
@@ -16,6 +16,19 @@ Use this workflow to give a write task to another local agent while the calling 
 | `agy` | Antigravity with Gemini models; a second opinion in code, or when the others are out of quota | `agy -p` |
 
 Use the worker the user names. If they name none, ask, or pick `codex` for routine work and `claude` for hard design. Never delegate to the agent you are running in. Any of these agents, or Cursor, can be the caller; Cursor is never a worker. Use `second-opinion` for a read-only second opinion and `codex-image` for images.
+
+**Code Mode runner.** When Python 3.12+ is available, use `scripts/run_worker.py` (standard library only, in this skill's folder) for steps 6, 7, 8 and 9 instead of hand-built shell pipelines. Run it from the repository root as `python3 <skill-dir>/scripts/run_worker.py <subcommand>`. It resolves the worker binary on `PATH` (never a shell alias), validates every slug, path, model and session id, and prints one JSON object per call:
+
+| Subcommand | Workflow step | What it does |
+| --- | --- | --- |
+| `start` | 6, 7 | Checks `.delegate-code/` is ignored, uses the step 4 worktree (`--existing-worktree`) or creates it, writes the run note, runs the worker in restricted mode (unless `--full-access`) under a 1800 s watchdog, and returns `status`, `session_id`, `worker_status`, `outcome` and `next_step` |
+| `resume` | 8 | Sends `--fix-file` to the same session with the same access mode and records the latest session id; a capped Claude run needs the remaining `--max-budget-usd` |
+| `status` | checks | Read-only `running`, `finished`, `abandoned` or `unknown` per delegation |
+| `bundle` | 8 | Writes `.delegate-code/<slug>.review/` and returns the `fingerprint` |
+| `apply` | 9 | With `--confirm`, refuses a `--expected-fingerprint` mismatch, then `git apply`s the staged diff into the main checkout; keeps the worktree |
+| `cleanup` | 9 | With `--confirm`, removes a `finished` or `abandoned` worktree, run note, review folder and branch |
+
+The runner does not replace any rule below: the caller still writes the brief, runs the check command and reviews the diff, and passes `--full-access`, `--confirm` or a spend cap only after the user approves it. A `null` `worker_status`, `outcome` or `next_step` means the run is unverified.
 
 Read `references/providers.md` before step 6 for exact CLI flags, resume syntax, model and effort flags, spend caps, watchdog wrapping and troubleshooting. Read `references/multi-and-status.md` when checking existing delegations, cleaning up `.delegate-code/`, or splitting one request into several delegations.
 
@@ -73,7 +86,7 @@ Steps that need no approval once the user asked for the delegation: reading repo
 5. **Choose the access mode.**
    - **Restricted** (default): the worker edits files in the worktree and runs only the commands it needs.
    - **Full access**: no approvals and no worker sandbox. Use only when the user asks for it for this run or states it in their standing instructions. The worktree is then the only boundary, so the no-edit-outside rule and step 8's scope check matter more.
-6. **Run the worker** from inside the worktree (`cd .delegate-code/<slug>`), in the background when the host supports it. Follow `references/providers.md` for the exact command, optional model and effort flags, spend cap, hard watchdog (`perl -e 'alarm shift; exec @ARGV' 1800` or `timeout 1800`), run note (`.delegate-code/<slug>.run`) and status classification (`ok`, `empty`, `timeout`, `failed`).
+6. **Run the worker** from inside the worktree (`cd .delegate-code/<slug>`), in the background when the host supports it. With the runner, create the worktree and run the baseline as in step 4, then launch with `start --existing-worktree`, which checks that the path is a registered worktree on `delegate-code/<slug>` with no run note yet. Otherwise follow `references/providers.md` for the exact command, optional model and effort flags, spend cap, hard watchdog (`perl -e 'alarm shift; exec @ARGV' 1800` or `timeout 1800`), run note (`.delegate-code/<slug>.run`) and status classification (`ok`, `empty`, `timeout`, `failed`).
    - Treat anything other than `ok` as a failed run. Do not switch to another agent or API without asking the user.
    - Distinguish ordinary obstacles (missing local context answerable from the repo, transient environment glitches safe to retry) from hard blockers (withheld permissions, quota limits, outside-directory edits, unapproved side effects): resolve ordinary obstacles before stopping, and stop immediately on hard blockers.
 7. **Read the result** from `last.md` (Codex), `result` in `result.json` (Claude) or `response` in `result.json` (Antigravity). Take `Status`, `Outcome` and `Next step`; if missing, treat the run as unverified rather than failed:
@@ -100,13 +113,13 @@ Steps that need no approval once the user asked for the delegation: reading repo
 
    **Correction and repeated-failure consult.** Compact what you send. Write `fix.md` (and any diagnostic prompt) as the exact failing assertion or error line, the confirmed findings with file and line, and the unmet done criterion. Leave out full logs, passing output, unconfirmed review prose and earlier diffs; point to files by path instead of pasting them. If something misses the brief, send one short correction to the same session from inside the worktree using the resume command in `references/providers.md` (same access mode; you may step up effort one level if the first run used a lower explicit effort and the CLI supports it). If the worker still fails or repeats the same error, and an eligible third CLI (`second-opinion`, neither the worker nor you) is installed and not declined, you may run one bounded read-only diagnostic consult on the brief, diff and error output before stopping and reporting what is left. Never start an automatic fix-and-review loop.
 
-   **Fingerprint the reviewed state.** Once the worker exits and review is done, hash the whole worktree (untracked files included; staging commits nothing):
+   **Fingerprint the reviewed state.** Once the worker exits and review is done, hash the whole worktree (untracked files included; staging commits nothing). The runner's `bundle` writes the review bundle above and returns this hash as `fingerprint`:
 
    ```sh
    git -C .delegate-code/<slug> add -A && git -C .delegate-code/<slug> write-tree
    ```
 9. **Report and apply on approval.** Report the worker, access mode, branch, worktree path, worker Status and Outcome, your check result, review findings, and fingerprint. Do not merge, commit, push or remove the worktree until the user approves.
-   - On approval, rerun the fingerprint command first. If the hash differs, stop, show what changed, and review again before applying.
+   - On approval, rerun the fingerprint command first. If the hash differs, stop, show what changed, and review again before applying. The runner's `apply --expected-fingerprint <hash> --confirm` does this check and the apply below in one call, and `cleanup --confirm` does the removal step.
    - The worker does not commit, so `git merge delegate-code/<slug>` would bring in nothing. Apply the staged diff into the main checkout:
 
      ```sh
