@@ -56,6 +56,41 @@ An eval case can add `rubric.trajectory` with `in_order` steps the agent must ta
 in sequence and `forbidden` steps it must not take, so a grader can catch a correct
 result reached the wrong way. Validation checks only the shape of these lists.
 
+### Papercuts to regressions
+
+Capture real skill friction as a short note instead of adding an always-on skill:
+
+```text
+Tried: what you asked the agent to do
+Expected: what the skill should have made it do
+Observed: what actually happened
+Fix: the skill change that resolves it
+```
+
+Each fixed skill bug adds a regression case to that skill's `tests/eval.yaml`.
+Add `rubric.trajectory` when step order matters, not only the final answer.
+
+### Local eval and ablation runs
+
+`scripts/run_evals.py` is an opt-in local tool and is not run in CI. It sends eval
+cases to a local `claude`, `codex` or `agy` CLI in read-only mode:
+
+```sh
+python3 scripts/run_evals.py --list
+python3 scripts/run_evals.py --skill delegate-code --ablation --dry-run
+python3 scripts/run_evals.py --skill delegate-code --case scoped_codex_delegation --provider codex --ablation
+```
+
+`--ablation` runs each case with the skill text as context and again without it,
+so the two outputs can be compared blind. Ablation runs also write
+`blind/<case>.A.md` and `blind/<case>.B.md` with only the responses, and
+`blind/key.json` records which label is which variant, shuffled per case. Grade the
+blind files before opening the key. Results go to a new, gitignored
+`tmp/eval-runs/<UTC timestamp>/` directory by default; a non-empty `--output-dir`
+is refused rather than overwritten. The runner checks `must_mention` and
+`must_not_mention`; expectations and trajectory steps are listed in `summary.md`
+for a human or a `second-opinion` judge to grade.
+
 Client installation and activation are separate from command-generation checks.
 Use a disposable project and isolated client configuration for installation tests,
 never your real skill directories. No live client installation coverage is claimed
