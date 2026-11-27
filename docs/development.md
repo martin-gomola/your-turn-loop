@@ -91,6 +91,22 @@ is refused rather than overwritten. The runner checks `must_mention` and
 `must_not_mention`; expectations and trajectory steps are listed in `summary.md`
 for a human or a `second-opinion` judge to grade.
 
+Each case and variant runs in a fresh temporary directory outside the repository,
+removed afterwards, so the `without_skill` arm cannot find `skills/` or repository
+config. For `with_skill`, the skill folder is copied into
+`<workspace>/.claude/skills/<name>` without `tests/` or `__pycache__/`, so
+`references/` and `scripts/` resolve but eval rubrics never reach the model; the
+prompt still embeds `SKILL.md` in a `<skill>` block for every provider. A symlink
+in the skill tree, or a `TMPDIR` inside the repository, stops the run with an
+error. The output directory is claimed with an exclusive `summary.json`
+placeholder, so two runs cannot share it. Claude runs
+with `--output-format stream-json --verbose --strict-mcp-config
+--no-session-persistence` and Codex with `--json`. Each result's `metrics` records
+`wall_seconds` for every provider and, when the CLI reports them, `turns`,
+`cost_usd`, input, cache write, cache read and output tokens, plus the observed
+`tools` sequence for trajectory review. `summary.json` adds per-variant `totals`,
+and `summary.md` opens with a metrics table comparing the variants.
+
 Client installation and activation are separate from command-generation checks.
 Use a disposable project and isolated client configuration for installation tests,
 never your real skill directories. No live client installation coverage is claimed
