@@ -93,6 +93,40 @@ class DistributionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "include a license"):
             validator.validate(self.root)
 
+    def test_long_skill_is_rejected(self):
+        path = self.root / "skills/what-to-ask/SKILL.md"
+        path.write_text(path.read_text() + "filler\n" * 200)
+        with self.assertRaisesRegex(ValueError, "what-to-ask: SKILL.md exceeds the 200 line limit"):
+            validator.validate(self.root)
+
+    def test_missing_or_escaping_referenced_file_is_rejected(self):
+        path = self.root / "skills/second-opinion/SKILL.md"
+        original = path.read_text()
+        (self.root / "skills/second-opinion/references/guide").write_text("prefix of a spaced name")
+        for reference in ("references/missing.md", "scripts/missing.py", "references/../../what-to-ask/SKILL.md", "references/..", "references/guide v2.md"):
+            with self.subTest(reference=reference):
+                path.write_text(original + f"\nSee `{reference}`.\n")
+                with self.assertRaisesRegex(ValueError, "missing or outside the skill"):
+                    validator.validate(self.root)
+
+    def test_mcp_config_in_skill_is_rejected(self):
+        (self.root / "skills/what-to-ask/tests/.mcp.json").write_text("{}")
+        with self.assertRaisesRegex(ValueError, r"\.mcp\.json is not allowed"):
+            validator.validate(self.root)
+
+    def test_cli_skill_requires_error_recovery_table(self):
+        path = self.root / "skills/codex-image/SKILL.md"
+        original = path.read_text()
+        two_columns = "## Error Recovery\n\n| Failure | Recovery |\n| --- | --- |\n| a | b |\n| c | d |\n\n"
+        one_row = "## Error Recovery\n\n| Failure | Cause | Recovery |\n| --- | --- | --- |\n| a | b | c |\n\n"
+        blank_cells = "## Error Recovery\n\n| Failure | Cause | Recovery |\n| --- | --- | --- |\n| | | |\n| | | |\n\n"
+        split_table = "## Error Recovery\n\n| Failure | Cause | Recovery |\n| --- | --- | --- |\n\n| a | b | c |\n\n| d | e | f |\n\n"
+        for replacement in ("", two_columns, one_row, blank_cells, split_table):
+            with self.subTest(replacement=replacement):
+                path.write_text(re.sub(r"(?s)## Error Recovery.*?(?=## )", replacement, original))
+                with self.assertRaisesRegex(ValueError, "codex-image: CLI skill needs an Error Recovery table"):
+                    validator.validate(self.root)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -89,8 +89,14 @@ Treat anything but `ok` as a failed run. Do not wait on an empty file past the l
 
 When the run starts, write `.delegate-code/<slug>.run` next to the worktree (not inside it, so the diff stays clean) with four lines: `worker=<name>`, `task=<$TASK>`, `started=<UTC time>` and `pid=<PID>` (from `$!` when started with `&`; leave it empty if the host does not show it). Delete it with the worktree.
 
-## Troubleshooting
+## Error Recovery
 
-- **Caller sandbox.** The worker writes its own state (`~/.codex`, `~/.claude` or `~/.gemini`) and needs network access to its service. Under a sandboxed caller, such as Claude Code's sandbox or Codex in `workspace-write` without network, it fails with `Operation not permitted` or connection errors. Run it outside the caller's sandbox with the user's approval.
-- **Outdated CLI.** `model_not_found` or "not supported with a ChatGPT account" usually means an old binary earlier on `PATH` does not know newer models. Compare `which -a` results and their versions, run the newest one, and tell the user which old binary shadows it.
-- **Log noise.** Transport errors about unreachable MCP servers come from the worker's own config and do not fail the run. Judge the run by the exit code and the final message.
+| Failure | Cause | Recovery |
+| --- | --- | --- |
+| `Operation not permitted` or connection errors | A sandboxed caller, such as Claude Code's sandbox or Codex in `workspace-write` without network, blocks the worker from writing its own state (`~/.codex`, `~/.claude` or `~/.gemini`) or reaching its service | Run the worker outside the caller's sandbox with the user's approval. |
+| `model_not_found` or "not supported with a ChatGPT account" | An old binary earlier on `PATH` does not know newer models | Compare `which -a` results and their versions, run the newest one, and tell the user which old binary shadows it. |
+| Transport errors about unreachable MCP servers in `worker.log` | The worker's own config, not the run | Ignore them; judge the run by the exit code and the final message. |
+| Exit 142 (`perl`) or 124 (`timeout`) | The watchdog limit expired | Classify the run as `timeout`, read the tail of `worker.log`, and report a failed run. |
+| Entries in Antigravity `denied_actions` or another confirmed restricted-mode command denial | Restricted mode blocked a command the worker needed | Add the missing `--allowedTools` entry or `command(<program>)` rule on the one correction pass only if that command is already within the user's authorization; otherwise stop and ask the user. |
+| Exit 0 with an empty final message and no confirmed denial | The worker ended without answering | Read the tail of `worker.log`, classify the run as `empty` (a failed run) and report it; do not retry automatically or widen permissions. |
+| Claude `is_error: true` or a subtype such as `error_max_budget_usd` | The run failed or hit its spend cap despite exit 0 | Report a failed run; do not raise the cap without asking. |

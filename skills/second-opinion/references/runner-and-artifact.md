@@ -42,6 +42,16 @@ Recovery boundaries:
 - On `permission`, the runner retries exactly once with a command-free correction: use native read-only file tools and supplied context, state uncertainty where evidence is unavailable, and return the completed opinion without requesting permissions. Recovery must not edit Antigravity settings, add allow rules, switch providers, drop sandbox mode, or use `--dangerously-skip-permissions`. If the retry is also permission-blocked, preserve both attempts, return `permission`, and report that an exact command grant requires explicit user authorization.
 - Do not retry `empty`, `timeout`, `refusal`, or `failed` automatically.
 
+## Error Recovery
+
+| Failure | Cause | Recovery |
+| --- | --- | --- |
+| Runner refuses to run before invoking the provider | The artifact path fails `git check-ignore` because `.second-opinion/` is not ignored | Ask the user once, add the working folders to the exclude file as shown below, then rerun. |
+| `failed` with a missing dependency | The provider CLI (`claude`, `agy` or `codex`) is not on `PATH` | Report the missing CLI; use another installed provider only if the user agrees. |
+| `timeout` | The bounded execution expired | Report the partial output preserved in the artifact; rerun with a narrower prompt only on the user's request. |
+| `permission` after the single retry | Headless Antigravity denied a command twice | Preserve both attempts and report that an exact command grant requires explicit user authorization. |
+| `refusal` | Claude's safety classifier declined, often because the prompt asked it to write out its internal reasoning | Remove that request and rerun only on the user's request. |
+
 ## Ignore Working Folders and Save the Artifact
 
 Artifacts are saved under:

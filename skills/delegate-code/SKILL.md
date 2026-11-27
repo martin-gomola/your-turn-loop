@@ -1,7 +1,7 @@
 ---
 name: delegate-code
 metadata:
-  version: "0.13.0"
+  version: "0.13.1"
 description: Delegates a scoped implementation task to a local Codex, Claude Code or Antigravity CLI in its own git worktree, then reviews the diff and the returned Outcome and Next step. Use when the user asks to hand coding work to Codex, Claude or Antigravity from another agent. Avoid for read-only opinions, image generation, or work the current agent should do itself.
 ---
 

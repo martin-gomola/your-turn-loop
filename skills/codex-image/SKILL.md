@@ -1,7 +1,7 @@
 ---
 name: codex-image
 metadata:
-  version: "0.3.0"
+  version: "0.3.1"
 description: Generates bitmap images (app icons, illustrations, social previews, hero images, mockups, backgrounds) when the current agent has no image-generation tool, by delegating to a local Codex CLI that can generate images. Use from Claude Code, Cursor, Gemini, Antigravity or any non-Codex agent asked to create, draw or generate an image, even when the request never mentions Codex; avoid for prompt-only work, crops or resizes, or when a native image tool already fits.
 ---
 
@@ -28,6 +28,16 @@ Use this workflow when an agent without its own image-generation tool, such as C
    Omit repeated `--image` flags when there are no references. `-` reads the request from stdin. Invoke `command codex` or the resolved binary path from step 3 rather than a shell wrapper. When the task directory is a temporary directory outside a Git repository (step 4), add `--skip-git-repo-check` if `codex exec --help` lists it. Bound every run with a watchdog, such as a `perl -e 'alarm shift; exec @ARGV' 600` prefix or `timeout 600` where installed, and treat a timeout as a failed run. Do not use `--dangerously-bypass-approvals-and-sandbox`, `--dangerously-bypass-hook-trust`, or broader filesystem access just to make image generation work. If the runtime lacks the image tool or needed permissions, stop and explain the missing capability; do not silently switch to a different service or API.
 8. Verify that the requested output exists, opens as an image, has the requested dimensions and format, and contains the right scene and spelling. Inspect it visually. If it misses the brief, make at most one focused correction within the authorized request; if it still fails, preserve the result and ask for user feedback.
 9. Return the output path and a short verification summary. Keep generated files and logs out of Git unless the user asks to add them. Preserve the final image for the user; do not delete it during cleanup.
+
+## Error Recovery
+
+| Failure | Cause | Recovery |
+| --- | --- | --- |
+| `codex: command not found` | No Codex CLI on `PATH` | Tell the user Codex is not installed; do not switch to another service or API. |
+| Codex returns only text and no image file | The child runtime has no image-generation tool or lacks permissions | Stop, explain the missing capability, and keep `codex.log` for the user. |
+| Codex refuses to run outside a Git repository | The task directory is a temporary directory outside a Git repository | Add `--skip-git-repo-check` if `codex exec --help` lists it. |
+| Watchdog exit 142 (`perl`) or 124 (`timeout`) | The run exceeded the time limit | Treat it as a failed run and report the tail of `codex.log`. |
+| Wrong dimensions, scene or spelling | The image missed the brief | Make one focused correction; if it still fails, preserve the result and ask for feedback. |
 
 ## Source and capability boundary
 

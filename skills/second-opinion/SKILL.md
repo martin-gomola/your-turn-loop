@@ -1,7 +1,7 @@
 ---
 name: second-opinion
 metadata:
-  version: "0.9.0"
+  version: "0.9.1"
 description: Asks Claude, Anthropic, Codex, OpenAI, Gemini, Google, or Antigravity through installed local CLIs and saves a repository-local audit artifact. Use for an explicitly requested external-model second opinion, critique, brainstorm, review, or research pass.
 ---
 

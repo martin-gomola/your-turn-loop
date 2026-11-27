@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import itertools
 import json
 import re
 from pathlib import Path
@@ -9,12 +10,51 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+MAX_SKILL_LINES = 200
+CLI_SKILLS = {"codex-image", "delegate-code", "second-opinion"}  # skills that run external CLIs
+
+
+def has_error_recovery_table(text: str) -> bool:
+    """True when an `## Error Recovery` section holds one contiguous table with 3+ filled columns and 2+ filled rows."""
+    match = re.search(r"(?m)^## Error Recovery\s*$(.*?)(?=^## |\Z)", text, re.S)
+    if not match:
+        return False
+    for is_table, block in itertools.groupby(match.group(1).splitlines(), lambda line: line.strip().startswith("|")):
+        if not is_table:
+            continue
+        table = [[cell.strip() for cell in line.strip().strip("|").split("|")] for line in block]
+        if len(table) < 4:
+            continue
+        header, divider, *rows = table
+        filled = lambda cells: sum(bool(cell) for cell in cells) >= 3
+        if filled(header) and sum(bool(re.fullmatch(r":?-+:?", cell)) for cell in divider) >= 3 and all(map(filled, rows)):
+            return True
+    return False
+
+
+def referenced_paths(text: str) -> set[str]:
+    """Local `references/` and `scripts/` paths named in backticks or as bare tokens."""
+    found = set(re.findall(r"`((?:references|scripts)/[^`\n]+)`", text))
+    bare_text = re.sub(r"`(?:references|scripts)/[^`\n]+`", "", text)
+    for token in re.findall(r"(?<![\w./-])(?:references|scripts)/[\w./-]+", bare_text):
+        found.add(token if token.endswith("..") else token.rstrip(".,;:)"))
+    return found
 
 
 def validate_skill(folder: Path) -> dict:
     if not (folder / "LICENSE").is_file():
         raise ValueError(f"{folder.name}: standalone installations must include a license")
     text = (folder / "SKILL.md").read_text()
+    if len(text.splitlines()) > MAX_SKILL_LINES:
+        raise ValueError(f"{folder.name}: SKILL.md exceeds the {MAX_SKILL_LINES} line limit")
+    for reference in sorted(referenced_paths(text)):
+        target = (folder / reference).resolve()
+        if not target.is_relative_to(folder.resolve()) or not target.is_file():
+            raise ValueError(f"{folder.name}: referenced file {reference} is missing or outside the skill")
+    if any(folder.rglob(".mcp.json")):
+        raise ValueError(f"{folder.name}: .mcp.json is not allowed; skills must not require MCP")
+    if folder.name in CLI_SKILLS and not any(has_error_recovery_table(path.read_text()) for path in [folder / "SKILL.md", *sorted(folder.glob("references/*.md"))]):
+        raise ValueError(f"{folder.name}: CLI skill needs an Error Recovery table")
     parts = text.split("---", 2)
     if len(parts) != 3 or parts[0].strip():
         raise ValueError(f"{folder.name}: missing frontmatter")
